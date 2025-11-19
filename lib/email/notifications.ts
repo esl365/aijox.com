@@ -5,7 +5,15 @@
 
 import { Resend } from 'resend';
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// Lazy initialize Resend client only when needed
+let resend: Resend | null = null;
+
+function getResendClient(): Resend | null {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 /**
  * Notify teacher when their video has been analyzed
@@ -20,7 +28,8 @@ export async function notifyTeacherVideoAnalyzed(params: {
     improvements: string[];
   };
 }) {
-  if (!resend) {
+  const client = getResendClient();
+  if (!client) {
     console.warn('RESEND_API_KEY not configured. Email not sent.');
     return { success: false, error: 'Email service not configured' };
   }
@@ -28,7 +37,7 @@ export async function notifyTeacherVideoAnalyzed(params: {
   try {
     const { teacherEmail, teacherName, feedback } = params;
 
-    await resend.emails.send({
+    await client.emails.send({
       from: 'Global Educator Nexus <noreply@aijox.com>',
       to: teacherEmail,
       subject: 'Your Video Profile Has Been Analyzed',
@@ -124,7 +133,8 @@ export async function notifySchoolNewApplication(params: {
   jobTitle: string;
   applicationId: string;
 }) {
-  if (!resend) {
+  const client = getResendClient();
+  if (!client) {
     console.warn('RESEND_API_KEY not configured. Email not sent.');
     return { success: false, error: 'Email service not configured' };
   }
@@ -132,7 +142,7 @@ export async function notifySchoolNewApplication(params: {
   try {
     const { schoolEmail, schoolName, teacherName, jobTitle, applicationId } = params;
 
-    await resend.emails.send({
+    await client.emails.send({
       from: 'Global Educator Nexus <noreply@aijox.com>',
       to: schoolEmail,
       subject: `New Application for ${jobTitle}`,

@@ -16,7 +16,19 @@ import { generateBatchEmails } from '@/lib/ai/email-generator';
 import { jobMatchingRateLimit, checkRateLimit } from '@/lib/rate-limit';
 import { SCORING_CONFIG } from '@/lib/config/scoring';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialize Resend client only when needed
+let resend: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 export type MatchingResult = {
   success: boolean;
@@ -210,7 +222,7 @@ export async function notifyMatchedTeachers(
         const batch = emailBatches.slice(i, i + BATCH_SIZE);
 
         try {
-          await resend.batch.send(batch);
+          await getResendClient().batch.send(batch);
           emailsSent += batch.length;
 
           // Rate limiting delay

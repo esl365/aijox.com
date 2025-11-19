@@ -15,8 +15,19 @@ import { Resend } from 'resend';
 import type { JobPosting } from '@prisma/client';
 import type { SavedSearchFilters } from '@/lib/types/saved-search';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialize Resend client only when needed
+let resend: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 // Constants
 const FROM_EMAIL = process.env.FROM_EMAIL || 'jobs@aijobx.com';
@@ -41,7 +52,7 @@ export async function sendInstantJobAlert(
     const subject = `New Job Alert: ${job.title} in ${job.country}`;
     const html = generateInstantAlertHTML(recipientName, job, savedSearchId);
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResendClient().emails.send({
       from: `AI Job X <${FROM_EMAIL}>`,
       to: recipientEmail,
       subject,
@@ -85,7 +96,7 @@ export async function sendDigestJobAlert(
       frequency
     );
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResendClient().emails.send({
       from: `AI Job X <${FROM_EMAIL}>`,
       to: recipientEmail,
       subject,
