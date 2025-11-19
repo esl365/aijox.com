@@ -13,7 +13,7 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any, // Type cast needed for NextAuth v5 beta compatibility
   session: {
     strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days
