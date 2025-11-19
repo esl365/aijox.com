@@ -37,13 +37,14 @@ export async function findRecommendedJobs(
   minSimilarity: number = 0.8,
   limit: number = 10
 ): Promise<JobRecommendation[]> {
-  // 1. Get teacher with embedding
+  // TODO: Enable when embedding field is added to schema
+  // For now, return basic filtered recommendations
+
+  // 1. Get teacher profile
   const teacher = await prisma.teacherProfile.findUnique({
     where: { id: teacherId },
     select: {
       id: true,
-      // @ts-ignore - embedding is Unsupported type
-      embedding: true,
       subjects: true,
       yearsExperience: true,
       preferredCountries: true,
@@ -55,11 +56,13 @@ export async function findRecommendedJobs(
     throw new Error('Teacher not found');
   }
 
+  /* TODO: Enable when embedding field is added
   if (!teacher.embedding) {
     throw new Error(
       'Teacher profile embedding not generated. Please update your profile.'
     );
   }
+  */
 
   // 2. Get already applied job IDs to exclude
   const applications = await prisma.application.findMany({
@@ -68,78 +71,73 @@ export async function findRecommendedJobs(
   });
   const appliedJobIds = applications.map((app) => app.jobId);
 
+  /* TODO: Enable vector similarity search when embedding field is added
   // 3. Perform vector similarity search using pgvector
-  // Note: pgvector uses <=> for cosine distance
-  // Similarity = 1 - distance
-  const matches = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      title: string;
-      schoolName: string;
-      country: string;
-      city: string;
-      subject: string;
-      salaryUSD: number;
-      housingProvided: boolean;
-      flightProvided: boolean;
-      description: string;
-      status: string;
-      createdAt: Date;
-      distance: number;
-    }>
-  >`
-    SELECT
-      j.id,
-      j.title,
-      j."schoolName",
-      j.country,
-      j.city,
-      j.subject,
-      j."salaryUSD",
-      j."housingProvided",
-      j."flightProvided",
-      j.description,
-      j.status,
-      j."createdAt",
-      (j.embedding <=> ${teacher.embedding}::vector) as distance
+  const matches = await prisma.$queryRaw`
+    SELECT ...
+    (j.embedding <=> ${teacher.embedding}::vector) as distance
     FROM "JobPosting" j
     WHERE j.status = 'ACTIVE'
       AND j.embedding IS NOT NULL
       AND (j.embedding <=> ${teacher.embedding}::vector) < ${1 - minSimilarity}
-      ${
-        appliedJobIds.length > 0
-          ? `AND j.id NOT IN (${appliedJobIds.map((id) => `'${id}'`).join(', ')})`
-          : ''
-      }
     ORDER BY distance ASC
     LIMIT ${limit}
   `;
+  */
 
-  // 4. Calculate similarity and match scores
+  // 3. Basic filtering until vector search is available
+  const matches = await prisma.jobPosting.findMany({
+    where: {
+      status: 'ACTIVE',
+      ...(appliedJobIds.length > 0 && {
+        id: { notIn: appliedJobIds },
+      }),
+      OR: [
+        { country: { in: teacher.preferredCountries } },
+        { subject: { in: teacher.subjects } },
+      ],
+    },
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // 4. Calculate match scores (basic until vector search is available)
   const recommendations: JobRecommendation[] = matches.map((match) => {
-    const similarity = 1 - Number(match.distance);
-
-    // Calculate match score (0-100) with various factors
-    let matchScore = similarity * 100;
+    // Base score without vector similarity
+    let matchScore = 70; // Base score for matching jobs
+    const distance = 0.3; // Placeholder distance
+    const similarity = 0.7; // Placeholder similarity
 
     // Bonus: Preferred country
     if (teacher.preferredCountries.includes(match.country)) {
-      matchScore = Math.min(100, matchScore + 5);
+      matchScore = Math.min(100, matchScore + 10);
     }
 
     // Bonus: Subject match
     if (teacher.subjects.includes(match.subject)) {
-      matchScore = Math.min(100, matchScore + 3);
+      matchScore = Math.min(100, matchScore + 10);
     }
 
     // Bonus: Salary meets minimum
     if (teacher.minSalaryUSD && match.salaryUSD >= teacher.minSalaryUSD) {
-      matchScore = Math.min(100, matchScore + 2);
+      matchScore = Math.min(100, matchScore + 10);
     }
 
     return {
-      ...match,
+      id: match.id,
+      title: match.title,
+      schoolName: match.schoolName,
+      country: match.country,
+      city: match.city,
+      subject: match.subject,
+      salaryUSD: match.salaryUSD,
+      housingProvided: match.housingProvided,
+      flightProvided: match.flightProvided,
+      description: match.description,
+      status: match.status,
+      createdAt: match.createdAt,
       similarity,
+      distance,
       matchScore: Math.round(matchScore),
     };
   });
@@ -155,50 +153,28 @@ export async function findSimilarJobs(
   jobId: string,
   limit: number = 5
 ): Promise<JobRecommendation[]> {
+  // TODO: Enable when embedding field is added to schema
   const job = await prisma.jobPosting.findUnique({
     where: { id: jobId },
     select: {
       id: true,
-      // @ts-ignore
-      embedding: true,
+      subject: true,
+      country: true,
     },
   });
 
-  if (!job || !job.embedding) {
+  if (!job) {
     return [];
   }
 
-  const matches = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      title: string;
-      schoolName: string;
-      country: string;
-      city: string;
-      subject: string;
-      salaryUSD: number;
-      housingProvided: boolean;
-      flightProvided: boolean;
-      description: string;
-      status: string;
-      createdAt: Date;
-      distance: number;
-    }>
-  >`
-    SELECT
-      j.id,
-      j.title,
-      j."schoolName",
-      j.country,
-      j.city,
-      j.subject,
-      j."salaryUSD",
-      j."housingProvided",
-      j."flightProvided",
-      j.description,
-      j.status,
-      j."createdAt",
-      (j.embedding <=> ${job.embedding}::vector) as distance
+  /* TODO: Enable vector similarity search when embedding field is added
+  if (!job.embedding) {
+    return [];
+  }
+
+  const matches = await prisma.$queryRaw`
+    SELECT ...
+    (j.embedding <=> ${job.embedding}::vector) as distance
     FROM "JobPosting" j
     WHERE j.status = 'ACTIVE'
       AND j.id != ${jobId}
@@ -206,10 +182,37 @@ export async function findSimilarJobs(
     ORDER BY distance ASC
     LIMIT ${limit}
   `;
+  */
+
+  // Basic filtering until vector search is available
+  const matches = await prisma.jobPosting.findMany({
+    where: {
+      status: 'ACTIVE',
+      id: { not: jobId },
+      OR: [
+        { subject: job.subject },
+        { country: job.country },
+      ],
+    },
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+  });
 
   return matches.map((match) => ({
-    ...match,
-    similarity: 1 - Number(match.distance),
-    matchScore: Math.round((1 - Number(match.distance)) * 100),
+    id: match.id,
+    title: match.title,
+    schoolName: match.schoolName,
+    country: match.country,
+    city: match.city,
+    subject: match.subject,
+    salaryUSD: match.salaryUSD,
+    housingProvided: match.housingProvided,
+    flightProvided: match.flightProvided,
+    description: match.description,
+    status: match.status,
+    createdAt: match.createdAt,
+    similarity: 0.7, // Placeholder
+    distance: 0.3, // Placeholder
+    matchScore: 70, // Basic match score
   }));
 }
