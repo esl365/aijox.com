@@ -96,9 +96,13 @@ export async function checkRateLimit(
   return { success: true };
 }
 
-/**
+/* TODO: Fix after Upstash Ratelimit API update
+ * These functions access protected 'prefix' property which is not allowed
+ * Need to find alternative way to construct keys or use library methods
+ *
  * Get rate limit status without consuming a token
  */
+/*
 export async function getRateLimitStatus(
   rateLimit: Ratelimit | null,
   identifier: string
@@ -111,7 +115,8 @@ export async function getRateLimitStatus(
     return null;
   }
 
-  // Use getRemaining to check status without consuming a token
+  // TODO: Cannot access rateLimit.prefix (protected property)
+  // Need alternative approach to get key
   const key = `${rateLimit.prefix}:${identifier}`;
   const result = await redis.get<{
     limit: number;
@@ -121,7 +126,7 @@ export async function getRateLimitStatus(
 
   if (!result) {
     return {
-      limit: 10, // Default limit
+      limit: 10,
       remaining: 10,
       reset: Date.now() + 10000,
     };
@@ -129,10 +134,12 @@ export async function getRateLimitStatus(
 
   return result;
 }
+*/
 
-/**
+/* TODO: Fix after Upstash Ratelimit API update
  * Manually reset rate limit for a user (admin function)
  */
+/*
 export async function resetRateLimit(
   rateLimit: Ratelimit | null,
   identifier: string
@@ -141,6 +148,8 @@ export async function resetRateLimit(
     return;
   }
 
+  // TODO: Cannot access rateLimit.prefix (protected property)
   const key = `${rateLimit.prefix}:${identifier}`;
   await redis.del(key);
 }
+*/
