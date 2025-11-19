@@ -283,7 +283,7 @@ export async function deduplicateMatches(
     select: { teacherId: true }
   });
 
-  const notifiedTeacherIds = new Set(recentNotifications.map(n => n.teacherId));
+  const notifiedTeacherIds = new Set(recentNotifications.map((n: { teacherId: string }) => n.teacherId));
 
   return candidates.filter(c => !notifiedTeacherIds.has(c.id));
 }
