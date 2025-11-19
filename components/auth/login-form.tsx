@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 
@@ -188,7 +189,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
             <Input
               id="password"
               type="password"
-              placeholder=""""""""""
+              placeholder="••••••••••"
               value={formData.password}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
@@ -208,6 +209,15 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
           </Button>
         </form>
       </CardContent>
+
+      <CardFooter className="flex justify-center">
+        <p className="text-sm text-muted-foreground">
+          Don't have an account?{' '}
+          <Link href="/signup" className="text-primary hover:underline font-medium">
+            Sign up
+          </Link>
+        </p>
+      </CardFooter>
     </Card>
   );
 }

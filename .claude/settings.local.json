@@ -6,7 +6,14 @@
       "Bash(git push:*)",
       "Bash(git commit:*)",
       "Bash(npm install:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(powershell -Command \"Get-Content ''C:\\aijobx\\specification\\Completion.md'' | Select-Object -Last 50\")",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,52 @@
+# Global Educator Nexus - Robots.txt
+# https://www.robotstxt.org/
+
+# Allow all search engines to index the site
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://aijobx.com/sitemap.xml
+
+# Disallow admin and private areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /profile/setup
+Disallow: /recruiter/setup
+
+# Disallow user-specific pages (prevent crawling private profiles)
+Disallow: /profile/*/applications
+Disallow: /profile/*/settings
+Disallow: /recruiter/*/dashboard
+
+# Allow country-specific job pages for SEO
+Allow: /jobs/south-korea
+Allow: /jobs/china
+Allow: /jobs/uae
+Allow: /jobs/vietnam
+Allow: /jobs/thailand
+Allow: /jobs/japan
+Allow: /jobs/saudi-arabia
+Allow: /jobs/taiwan
+Allow: /jobs/singapore
+Allow: /jobs/qatar
+
+# Crawl-delay to be respectful (optional, can be adjusted)
+# Crawl-delay: 1
+
+# Special instructions for Google
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /profile/*/applications
+Disallow: /profile/*/settings
+
+# Allow Google Images to index images
+User-agent: Googlebot-Image
+Allow: /
+
+# Instructions for Bing
+User-agent: Bingbot
+Allow: /
+Disallow: /api/

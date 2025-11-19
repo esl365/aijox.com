@@ -1,5 +1,12 @@
+const createMDX = require('@next/mdx');
+const remarkGfm = require('remark-gfm');
+const rehypeHighlight = require('rehype-highlight');
+const rehypeSlug = require('rehype-slug');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+
   images: {
     remotePatterns: [
       {
@@ -28,7 +35,16 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+    mdxRs: false,
   },
 };
 
-module.exports = nextConfig;
+const withMDX = createMDX({
+  extension: /\.mdx?$/,
+  options: {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [rehypeHighlight, rehypeSlug],
+  },
+});
+
+module.exports = withMDX(nextConfig);

@@ -137,9 +137,38 @@ model TeacherProfile {
   applications        Application[]
   documents           Document[]
   matchNotifications  MatchNotification[]
+  savedSearches       SavedSearch[]
 
   @@index([status, profileCompleteness])
   @@index([searchRank])
+}
+
+// Saved Searches & Job Alerts (Phase 2)
+model SavedSearch {
+  id        String   @id @default(cuid())
+  teacherId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Search criteria (stored as JSON)
+  name      String?  // Optional name for the search (e.g., "Seoul ESL Jobs")
+  filters   Json     // { country: "South Korea", subject: "ESL", minSalary: 2000, etc. }
+
+  // Alert settings
+  alertEmail     Boolean @default(true)  // Send email notifications
+  alertFrequency String  @default("DAILY") // INSTANT, DAILY, WEEKLY, NEVER
+  isActive       Boolean @default(true)   // Can be paused
+
+  // Tracking
+  lastAlertSent  DateTime?
+  lastMatchCount Int      @default(0)     // Number of jobs in last alert
+
+  // Relations
+  teacher TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId, isActive])
+  @@index([alertFrequency, isActive])
+  @@index([lastAlertSent])
 }
 
 // School/Organization Profile
@@ -156,8 +185,15 @@ model SchoolProfile {
   description String?  @db.Text
   website     String?
 
+  // Verification
+  isVerified        Boolean   @default(false)
+  verifiedAt        DateTime?
+  verifiedBy        String?   // Admin user ID who verified
+  verificationNotes String?   @db.Text
+
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobPostings JobPosting[]
+  reviews     Review[]
 }
 
 // Recruiter Profile
@@ -169,6 +205,12 @@ model RecruiterProfile {
 
   companyName String?
   country     String?
+
+  // Verification
+  isVerified        Boolean   @default(false)
+  verifiedAt        DateTime?
+  verifiedBy        String?   // Admin user ID who verified
+  verificationNotes String?   @db.Text
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobPostings JobPosting[]
@@ -212,6 +254,13 @@ model JobPosting {
   contractLength     Int?     // months
   startDate          DateTime?
 
+  // Google for Jobs Schema (SEO)
+  expiresAt              DateTime? // Job posting expiration date
+  employmentType         String?   @default("FULL_TIME") // FULL_TIME, PART_TIME, CONTRACT, TEMPORARY, INTERN
+  educationRequirements  String?   @db.Text // e.g., "Bachelor's degree in Education or related field"
+  experienceRequirements String?   @db.Text // Detailed experience requirements (supplements requirements field)
+  applicationUrl         String?   // Custom application URL (defaults to platform URL)
+
   // Embeddings (Agent 2)
   embedding          Unsupported("vector(1536)")?
 
@@ -227,6 +276,7 @@ model JobPosting {
   recruiter   RecruiterProfile? @relation(fields: [recruiterId], references: [id])
   applications Application[]
   matchNotifications MatchNotification[]
+  reviews     Review[]
 
   @@index([status, country])
   @@index([subject])
@@ -343,4 +393,63 @@ model AIUsage {
 
   @@index([userId, createdAt])
   @@index([operation])
+}
+
+// Reviews & Ratings (Month 3)
+enum ReviewType {
+  JOB_REVIEW        // Teacher reviews a job/school they worked for
+  SCHOOL_REVIEW     // Teacher reviews a school (not job-specific)
+}
+
+enum ReviewStatus {
+  PENDING           // Awaiting moderation
+  APPROVED          // Approved and visible
+  REJECTED          // Rejected by moderator
+  FLAGGED           // Flagged for review
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Review metadata
+  reviewType ReviewType
+  status     ReviewStatus @default(PENDING)
+
+  // Author (teacher who wrote the review)
+  authorId   String
+  authorName String?  // Snapshot of name at time of review
+
+  // Target (what is being reviewed)
+  jobId      String?
+  schoolId   String?
+
+  // Content
+  rating     Int      // 1-5 stars
+  title      String?
+  comment    String   @db.Text
+
+  // Verification
+  isVerified Boolean  @default(false) // Verified actual employment
+  workPeriod String?  // e.g., "2022-2023" or "6 months"
+
+  // Helpful votes
+  helpfulCount    Int @default(0)
+  notHelpfulCount Int @default(0)
+
+  // Moderation
+  moderatedAt    DateTime?
+  moderatedBy    String?
+  moderatorNotes String?  @db.Text
+
+  // Relations
+  job    JobPosting?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  school SchoolProfile? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([jobId])
+  @@index([schoolId])
+  @@index([authorId])
+  @@index([rating])
 }
