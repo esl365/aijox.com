@@ -12,7 +12,7 @@
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { analyzeVideoWithRetry, generateUserFeedback, calculateProfileCompleteness } from '@/lib/ai/video-analyzer';
+import { analyzeVideoWithRetry, generateUserFeedback, calculateProfileCompleteness, type VideoAnalysis } from '@/lib/ai/video-analyzer';
 import { notifyTeacherVideoAnalyzed } from '@/lib/email/notifications';
 import { videoAnalysisRateLimit, checkRateLimit } from '@/lib/rate-limit';
 import { getSearchRank } from '@/lib/config/scoring';
@@ -235,7 +235,7 @@ export async function getVideoAnalysis(profileId: string) {
 
   return {
     ...profile,
-    feedback: profile.videoAnalysis ? generateUserFeedback(profile.videoAnalysis as any) : null
+    feedback: profile.videoAnalysis ? generateUserFeedback(profile.videoAnalysis as VideoAnalysis) : null
   };
 }
 

@@ -9,6 +9,7 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import type { Prisma } from '@prisma/client';
 import {
   checkVisaEligibility,
   checkAllCountries,
@@ -39,13 +40,13 @@ export async function calculateAllVisaStatuses(teacherId: string) {
     }
 
     // Check eligibility for all countries
-    const visaStatuses = checkAllCountries(teacher as any);
+    const visaStatuses = checkAllCountries(teacher);
 
     // Update profile with cached results
     await prisma.teacherProfile.update({
       where: { id: teacherId },
       data: {
-        visaStatus: visaStatuses as any, // Stored as JSONB
+        visaStatus: visaStatuses as Prisma.JsonValue, // Stored as JSONB
         visaLastCheckedAt: new Date()
       }
     });
@@ -121,7 +122,7 @@ export async function validateJobApplication(
     };
 
     // Check 1: Visa Eligibility (BLOCKING)
-    const visaCheck = checkVisaEligibility(teacher as any, job.country);
+    const visaCheck = checkVisaEligibility(teacher, job.country);
     checks.visaEligible = visaCheck.eligible;
 
     if (!visaCheck.eligible) {
@@ -198,7 +199,8 @@ export async function getVisaStatus(teacherId: string, country: string) {
 
   // Check if cached status exists
   if (teacher.visaStatus && typeof teacher.visaStatus === 'object') {
-    const cached = (teacher.visaStatus as any)[country];
+    const visaStatusObj = teacher.visaStatus as Record<string, VisaCheckResult>;
+    const cached = visaStatusObj[country];
     if (cached) {
       return {
         ...cached,
@@ -209,7 +211,7 @@ export async function getVisaStatus(teacherId: string, country: string) {
   }
 
   // Calculate on-the-fly
-  const result = checkVisaEligibility(teacher as any, country);
+  const result = checkVisaEligibility(teacher, country);
 
   return {
     ...result,
@@ -229,8 +231,8 @@ export async function getVisaDashboard(teacherId: string) {
     throw new Error('Teacher not found');
   }
 
-  const eligible = getEligibleCountries(teacher as any);
-  const ineligible = getIneligibleCountries(teacher as any);
+  const eligible = getEligibleCountries(teacher);
+  const ineligible = getIneligibleCountries(teacher);
 
   return {
     eligible,
@@ -315,10 +317,10 @@ export async function getImprovementSuggestions(teacherId: string) {
     throw new Error('Teacher not found');
   }
 
-  const ineligible = getIneligibleCountries(teacher as any);
+  const ineligible = getIneligibleCountries(teacher);
 
   return ineligible.map(({ country, reasons }) => {
-    const visaCheck = checkVisaEligibility(teacher as any, country);
+    const visaCheck = checkVisaEligibility(teacher, country);
     const recommendations = getEligibilityRecommendations(visaCheck);
 
     return {
