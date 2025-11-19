@@ -47,23 +47,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic job postings (active jobs only)
   let jobRoutes: MetadataRoute.Sitemap = [];
 
-  try {
-    const jobs = await prisma.jobPosting.findMany({
-      where: { status: 'ACTIVE' },
-      select: { id: true, updatedAt: true },
-      take: 1000, // Limit to prevent sitemap from being too large
-      orderBy: { updatedAt: 'desc' },
-    });
+  // Only fetch jobs if DATABASE_URL is available (skip during build)
+  if (process.env.DATABASE_URL) {
+    try {
+      const jobs = await prisma.jobPosting.findMany({
+        where: { status: 'ACTIVE' },
+        select: { id: true, updatedAt: true },
+        take: 1000, // Limit to prevent sitemap from being too large
+        orderBy: { updatedAt: 'desc' },
+      });
 
-    jobRoutes = jobs.map((job) => ({
-      url: `${baseUrl}/jobs/${job.id}`,
-      lastModified: job.updatedAt.toISOString(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.85,
-    }));
-  } catch (error) {
-    console.error('[Sitemap] Error fetching job postings:', error);
-    // Continue without job routes if database is not available
+      jobRoutes = jobs.map((job) => ({
+        url: `${baseUrl}/jobs/${job.id}`,
+        lastModified: job.updatedAt.toISOString(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.85,
+      }));
+    } catch (error) {
+      console.error('[Sitemap] Error fetching job postings:', error);
+      // Continue without job routes if database is not available
+    }
   }
 
   // Blog posts

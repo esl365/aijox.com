@@ -6,6 +6,9 @@ import { TeacherProfileForm } from '@/components/teacher/teacher-profile-form';
 import type { TeacherProfileFormData } from '@/lib/validations/teacher-profile';
 import { useEffect, useState } from 'react';
 
+// Force dynamic rendering to avoid build-time session issues
+export const dynamic = 'force-dynamic';
+
 export default function TeacherSetupPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
