@@ -9,7 +9,7 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   checkVisaEligibility,
   checkAllCountries,
@@ -46,7 +46,7 @@ export async function calculateAllVisaStatuses(teacherId: string) {
     await prisma.teacherProfile.update({
       where: { id: teacherId },
       data: {
-        visaStatus: visaStatuses as Prisma.JsonValue, // Stored as JSONB
+        visaStatus: visaStatuses as Prisma.InputJsonValue, // Stored as JSONB
         visaLastCheckedAt: new Date()
       }
     });

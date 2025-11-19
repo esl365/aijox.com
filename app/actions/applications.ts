@@ -73,22 +73,23 @@ export async function submitApplication(data: ApplicationSubmission) {
     // Calculate AI match score if embeddings exist
     let aiMatchScore: number | undefined;
 
-    const [teacher, job] = await Promise.all([
-      prisma.teacherProfile.findUnique({
-        where: { id: teacherProfileId },
-        select: { embedding: true }
-      }),
-      prisma.jobPosting.findUnique({
-        where: { id: data.jobId },
-        select: { embedding: true }
-      })
-    ]);
+    // TODO: Enable when embedding fields are added to Prisma schema
+    // const [teacher, job] = await Promise.all([
+    //   prisma.teacherProfile.findUnique({
+    //     where: { id: teacherProfileId },
+    //     select: { embedding: true }
+    //   }),
+    //   prisma.jobPosting.findUnique({
+    //     where: { id: data.jobId },
+    //     select: { embedding: true }
+    //   })
+    // ]);
 
     // TODO: Calculate cosine similarity if both embeddings exist
     // For now, use a placeholder
-    if (teacher?.embedding && job?.embedding) {
-      aiMatchScore = 75; // Placeholder
-    }
+    // if (teacher?.embedding && job?.embedding) {
+    //   aiMatchScore = 75; // Placeholder
+    // }
 
     // Create application
     const application = await prisma.application.create({

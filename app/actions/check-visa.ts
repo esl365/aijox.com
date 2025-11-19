@@ -9,7 +9,7 @@
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   checkVisaEligibility,
   checkAllCountries,
@@ -26,6 +26,7 @@ export type VisaCheckResponse = {
   message: string;
   result?: VisaCheckResult;
   allResults?: Record<string, VisaCheckResult>;
+  recommendations?: string[];
   error?: string;
 };
 
@@ -58,7 +59,7 @@ export async function calculateAllVisaStatuses(
     await prisma.teacherProfile.update({
       where: { id: teacherId },
       data: {
-        visaStatus: allResults as Prisma.JsonValue, // Store complete results
+        visaStatus: allResults as Prisma.InputJsonValue, // Store complete results
         visaLastCheckedAt: new Date()
       }
     });
@@ -113,10 +114,8 @@ export async function checkVisaForCountry(
     return {
       success: true,
       message: summary,
-      result: {
-        ...result,
-        recommendations
-      }
+      result,
+      recommendations
     };
 
   } catch (error: any) {
@@ -296,7 +295,7 @@ export async function getVisaStatistics(): Promise<{
   const teachers = await prisma.teacherProfile.findMany({
     where: {
       status: 'ACTIVE',
-      visaStatus: { not: null }
+      visaStatus: { not: Prisma.DbNull }
     },
     select: { visaStatus: true }
   });

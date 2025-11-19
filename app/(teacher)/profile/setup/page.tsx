@@ -1,29 +1,73 @@
-import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { TeacherProfileForm } from '@/components/teacher/teacher-profile-form';
+import type { TeacherProfileFormData } from '@/lib/validations/teacher-profile';
+import { useEffect, useState } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Complete Your Profile | Global Educator Nexus',
-  description: 'Set up your teacher profile to start finding opportunities',
-};
+export default function TeacherSetupPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function TeacherSetupPage() {
-  const session = await auth();
+  useEffect(() => {
+    if (status === 'loading') return;
 
-  // Redirect if not logged in
+    // Redirect if not logged in
+    if (!session?.user) {
+      router.push('/login');
+      return;
+    }
+
+    // Redirect if not a teacher
+    if (session.user.role !== 'TEACHER') {
+      router.push('/dashboard');
+      return;
+    }
+
+    // Redirect if profile already completed
+    if (session.user.hasProfile) {
+      router.push('/dashboard');
+      return;
+    }
+
+    setIsLoading(false);
+  }, [session, status, router]);
+
+  const handleSubmit = async (data: TeacherProfileFormData) => {
+    try {
+      const response = await fetch('/api/teacher/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save profile');
+      }
+
+      router.push('/dashboard');
+      router.refresh();
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
+  };
+
+  if (status === 'loading' || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!session?.user) {
-    redirect('/login');
-  }
-
-  // Redirect if not a teacher
-  if (session.user.role !== 'TEACHER') {
-    redirect('/dashboard');
-  }
-
-  // Redirect if profile already completed
-  if (session.user.hasProfile) {
-    redirect('/dashboard');
+    return null;
   }
 
   return (
@@ -39,7 +83,10 @@ export default async function TeacherSetupPage() {
           </p>
         </div>
 
-        <TeacherProfileForm userId={session.user.id} />
+        <TeacherProfileForm
+          userId={session.user.id}
+          onSubmit={handleSubmit}
+        />
       </div>
     </div>
   );

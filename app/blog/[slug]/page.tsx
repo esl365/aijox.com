@@ -24,7 +24,7 @@ import { BLOG_CATEGORIES } from '@/lib/types/blog';
 import 'highlight.js/styles/github-dark.css';
 
 type Props = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export async function generateStaticParams() {
@@ -33,7 +33,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
 
   if (!post) {
     return {
@@ -65,8 +66,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function BlogPostPage({ params }: Props) {
-  const post = getPostBySlug(params.slug);
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
 
   if (!post) {
     notFound();
@@ -74,7 +76,7 @@ export default function BlogPostPage({ params }: Props) {
 
   const { metadata, content, readingTime } = post;
   const category = BLOG_CATEGORIES[metadata.category as keyof typeof BLOG_CATEGORIES];
-  const relatedPosts = getRelatedPosts(params.slug, 3);
+  const relatedPosts = getRelatedPosts(slug, 3);
 
   return (
     <div className="min-h-screen bg-background">

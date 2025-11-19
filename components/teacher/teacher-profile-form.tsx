@@ -35,12 +35,14 @@ import { Loader2, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface ProfileFormProps {
+  userId: string;
   defaultValues?: Partial<TeacherProfileFormData>;
   onSubmit: (data: TeacherProfileFormData) => Promise<void>;
   profileCompleteness?: number;
 }
 
 export function TeacherProfileForm({
+  userId,
   defaultValues,
   onSubmit,
   profileCompleteness = 0,

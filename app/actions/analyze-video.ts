@@ -39,7 +39,6 @@ export async function analyzeTeacherVideo(profileId: string): Promise<AnalysisRe
         userId: true,
         firstName: true,
         lastName: true,
-        email: true,
         subjects: true,
         yearsExperience: true,
         certifications: true,
@@ -82,7 +81,7 @@ export async function analyzeTeacherVideo(profileId: string): Promise<AnalysisRe
     const completeness = calculateProfileCompleteness(
       true, // hasVideo
       analysis,
-      !!(profile.firstName && profile.lastName && profile.email),
+      !!(profile.firstName && profile.lastName && profile.user.email),
       !!profile.yearsExperience,
       profile.certifications.length > 0
     );
@@ -104,12 +103,15 @@ export async function analyzeTeacherVideo(profileId: string): Promise<AnalysisRe
     const feedback = generateUserFeedback(analysis);
 
     // 7. Send notification email
-    await notifyTeacherVideoAnalyzed(profile.user.email, {
-      firstName: profile.firstName,
-      score: analysis.overall_score,
-      feedback: feedback.message,
-      tips: feedback.tips,
-      shouldRerecord: feedback.shouldRerecord
+    await notifyTeacherVideoAnalyzed({
+      teacherEmail: profile.user.email,
+      teacherName: `${profile.firstName} ${profile.lastName}`,
+      videoUrl: profile.videoUrl,
+      feedback: {
+        overallScore: analysis.overall_score,
+        strengths: feedback.tips || [],
+        improvements: feedback.shouldRerecord ? [feedback.message] : [],
+      },
     });
 
     // 8. Revalidate profile page
@@ -226,9 +228,10 @@ export async function getVideoAnalysis(profileId: string) {
 
   if (!isOwner && !isRecruiter) {
     // Return limited data for public view
+    const analysis = profile.videoAnalysis as VideoAnalysis | null;
     return {
       hasVideo: !!profile.videoUrl,
-      overallScore: profile.videoAnalysis?.overall_score || null,
+      overallScore: analysis?.overall_score || null,
       status: profile.videoAnalysisStatus
     };
   }

@@ -17,7 +17,8 @@
       "Bash(cat:*)",
       "Bash(vercel --version:*)",
       "Bash(vercel whoami:*)",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

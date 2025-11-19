@@ -8,11 +8,12 @@ import {
 import { SavedSearchResultsClient } from './SavedSearchResultsClient';
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const savedSearch = await getSavedSearchById(params.id);
+  const { id } = await params;
+  const savedSearch = await getSavedSearchById(id);
 
   if (!savedSearch) {
     return {
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SavedSearchResultsPage({ params }: Props) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user || session.user.role !== 'TEACHER') {
@@ -34,8 +36,8 @@ export default async function SavedSearchResultsPage({ params }: Props) {
   }
 
   const [savedSearch, jobsResult] = await Promise.all([
-    getSavedSearchById(params.id),
-    getJobsForSavedSearch(params.id),
+    getSavedSearchById(id),
+    getJobsForSavedSearch(id),
   ]);
 
   if (!savedSearch) {

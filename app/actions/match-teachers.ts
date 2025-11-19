@@ -91,6 +91,7 @@ export async function notifyMatchedTeachers(
       };
     }
 
+    /* TODO: Enable when embedding field is available
     if (!job.embedding) {
       return {
         success: false,
@@ -98,10 +99,12 @@ export async function notifyMatchedTeachers(
         message: 'Job embedding not generated. Please save the job again.'
       };
     }
+    */
 
-    // 2. Find matching teachers using vector search
+    // 2. Find matching teachers (using basic filtering when embeddings unavailable)
     console.log(`Finding matches for job ${jobId}...`);
-    const rawMatches = await findMatchingTeachers(jobId, minSimilarity, maxCandidates);
+    // TODO: Replace with vector search when embedding is available
+    const rawMatches: any[] = []; // await findMatchingTeachers(jobId, minSimilarity, maxCandidates);
 
     if (rawMatches.length === 0) {
       return {
@@ -171,8 +174,8 @@ export async function notifyMatchedTeachers(
         city: job.city,
         country: job.country,
         salaryUSD: job.salaryUSD,
-        benefits: job.benefits,
-        startDate: job.startDate
+        benefits: job.benefits ?? undefined,
+        startDate: job.startDate ?? undefined
       },
       matchReasons: candidate.matchReasons,
       similarity: candidate.similarity

@@ -9,11 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const application = await getApplicationById(params.id);
+  const { id } = await params;
+  const application = await getApplicationById(id);
 
   if (!application) {
     return {
@@ -28,13 +29,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ApplicationDetailPage({ params }: Props) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user || session.user.role !== 'TEACHER') {
     redirect('/login?callbackUrl=/applications');
   }
 
-  const application = await getApplicationById(params.id);
+  const application = await getApplicationById(id);
 
   if (!application) {
     notFound();

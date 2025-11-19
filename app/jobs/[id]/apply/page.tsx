@@ -6,7 +6,7 @@ import { validateJobApplication } from '@/app/actions/visa-validation';
 import { ApplicationForm } from './ApplicationForm';
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export const metadata: Metadata = {
@@ -15,17 +15,18 @@ export const metadata: Metadata = {
 };
 
 export default async function ApplyPage({ params }: Props) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user) {
-    redirect(`/login?callbackUrl=/jobs/${params.id}/apply`);
+    redirect(`/login?callbackUrl=/jobs/${id}/apply`);
   }
 
   if (session.user.role !== 'TEACHER' || !session.user.teacherProfileId) {
     redirect('/');
   }
 
-  const job = await getJobById(params.id);
+  const job = await getJobById(id);
 
   if (!job) {
     notFound();
@@ -34,11 +35,11 @@ export default async function ApplyPage({ params }: Props) {
   // Validate eligibility
   const validation = await validateJobApplication(
     session.user.teacherProfileId,
-    params.id
+    id
   );
 
   if (!validation.canApply) {
-    redirect(`/jobs/${params.id}?error=${encodeURIComponent(validation.reason || 'Not eligible')}`);
+    redirect(`/jobs/${id}?error=${encodeURIComponent(validation.reason || 'Not eligible')}`);
   }
 
   return (

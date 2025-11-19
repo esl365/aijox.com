@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BLOG_CATEGORIES, type CategorySlug } from '@/lib/types/blog';
 
 type Props = {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 };
 
 export async function generateStaticParams() {
@@ -18,7 +18,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const category = BLOG_CATEGORIES[params.category as CategorySlug];
+  const { category: categorySlug } = await params;
+  const category = BLOG_CATEGORIES[categorySlug as CategorySlug];
 
   if (!category) {
     return {
@@ -37,14 +38,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function CategoryPage({ params }: Props) {
-  const category = BLOG_CATEGORIES[params.category as CategorySlug];
+export default async function CategoryPage({ params }: Props) {
+  const { category: categorySlug } = await params;
+  const category = BLOG_CATEGORIES[categorySlug as CategorySlug];
 
   if (!category) {
     notFound();
   }
 
-  const posts = getPostsByCategory(params.category as CategorySlug);
+  const posts = getPostsByCategory(categorySlug as CategorySlug);
 
   return (
     <div className="min-h-screen bg-background">

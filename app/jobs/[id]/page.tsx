@@ -12,11 +12,12 @@ import {
 } from '@/lib/seo/google-jobs';
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const job = await getJobById(params.id);
+  const { id } = await params;
+  const job = await getJobById(id);
 
   if (!job) {
     return {
@@ -51,11 +52,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function JobDetailPage({ params }: Props) {
+  const { id } = await params;
   const [job, session, reviews, reviewStats] = await Promise.all([
-    getJobById(params.id),
+    getJobById(id),
     auth(),
-    getJobReviews(params.id),
-    getJobReviewStats(params.id),
+    getJobReviews(id),
+    getJobReviewStats(id),
   ]);
 
   if (!job) {

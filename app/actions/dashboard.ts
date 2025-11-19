@@ -8,7 +8,7 @@
 
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getVisaDashboard } from './check-visa';
+import { getVisaDashboard } from './visa-validation';
 import type { Application, JobPosting } from '@prisma/client';
 
 export type DashboardData = {
@@ -23,7 +23,7 @@ export type DashboardData = {
     recent: (Application & { job: JobPosting })[];
   };
   visaStatus: {
-    eligible: { country: string; reasons: string[] }[];
+    eligible: string[];
     ineligible: { country: string; reasons: string[] }[];
     totalCountries: number;
     eligibilityPercentage: number;
@@ -189,8 +189,8 @@ export async function getRecommendedJobs(teacherId: string, limit: number = 6) {
     where: { id: teacherId },
     select: {
       id: true,
-      // @ts-ignore - embedding is Unsupported type
-      embedding: true,
+      // TODO: Enable when embedding field is added to schema
+      // embedding: true,
       subjects: true,
       preferredCountries: true,
       minSalaryUSD: true,
@@ -200,31 +200,35 @@ export async function getRecommendedJobs(teacherId: string, limit: number = 6) {
 
   if (!teacher) return [];
 
-  // If no embedding, fall back to basic filtering
+  // Use basic filtering (embedding-based recommendations disabled for now)
+  const jobs = await prisma.jobPosting.findMany({
+    where: {
+      status: 'ACTIVE',
+      AND: [
+        {
+          OR: [
+            { country: { in: teacher.preferredCountries } },
+            { subject: { in: teacher.subjects } }
+          ]
+        },
+        teacher.minSalaryUSD
+          ? { salaryUSD: { gte: teacher.minSalaryUSD } }
+          : {},
+        { minYearsExperience: { lte: teacher.yearsExperience } }
+      ]
+    },
+    orderBy: [
+      { salaryUSD: 'desc' },
+      { createdAt: 'desc' }
+    ],
+    take: limit
+  });
+  return jobs;
+
+  /* TODO: Enable vector search when embedding field is available
   if (!teacher.embedding) {
-    const jobs = await prisma.jobPosting.findMany({
-      where: {
-        status: 'ACTIVE',
-        AND: [
-          {
-            OR: [
-              { country: { in: teacher.preferredCountries } },
-              { subject: { in: teacher.subjects } }
-            ]
-          },
-          teacher.minSalaryUSD
-            ? { salaryUSD: { gte: teacher.minSalaryUSD } }
-            : {},
-          { minYearsExperience: { lte: teacher.yearsExperience } }
-        ]
-      },
-      orderBy: [
-        { salaryUSD: 'desc' },
-        { createdAt: 'desc' }
-      ],
-      take: limit
-    });
-    return jobs;
+    // Fallback to basic filtering
+    // ...
   }
 
   // Get already applied job IDs to exclude
@@ -284,4 +288,5 @@ export async function getRecommendedJobs(teacherId: string, limit: number = 6) {
   `;
 
   return matches;
+  */
 }

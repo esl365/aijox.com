@@ -12,8 +12,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { callbackUrl?: string };
+  searchParams: Promise<{ callbackUrl?: string }>;
 }) {
+  const params = await searchParams;
   const session = await auth();
 
   if (session?.user) {
@@ -25,12 +26,12 @@ export default async function LoginPage({
       redirect(getSetupUrl(session.user.role, 'select-role'));
     }
 
-    redirect(searchParams.callbackUrl || '/dashboard');
+    redirect(params.callbackUrl || '/dashboard');
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
-      <LoginForm callbackUrl={searchParams.callbackUrl} />
+      <LoginForm callbackUrl={params.callbackUrl} />
     </div>
   );
 }
