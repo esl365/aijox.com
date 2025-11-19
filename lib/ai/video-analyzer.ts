@@ -13,6 +13,7 @@ import { z } from 'zod';
 export const VideoAnalysisSchema = z.object({
   accent_type: z.enum(['North American', 'British', 'Australian', 'Asian', 'European', 'Other']),
   accent_clarity_score: z.number().min(1).max(10),
+  native_confidence_score: z.number().min(0).max(100).describe('Likelihood candidate is native English speaker (0-100)'),
   energy_level: z.enum(['High', 'Medium', 'Low']),
   energy_score: z.number().min(1).max(10),
   professionalism_score: z.number().min(1).max(10),
@@ -41,6 +42,7 @@ EVALUATION CRITERIA:
 1. ACCENT & PRONUNCIATION (1-10)
    - Clarity of speech and enunciation
    - Accent type identification (important for ESL positions)
+   - Native confidence score (0-100): Estimate likelihood candidate is native English speaker
    - Potential communication barriers with students
    - Natural flow and pace of speaking
 
