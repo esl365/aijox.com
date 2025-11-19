@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { RoleSelector } from '@/components/auth/role-selector';
+import { getSetupUrl } from '@/lib/utils/routing';
 
 export const metadata: Metadata = {
   title: 'Select Your Role | Global Educator Nexus',
@@ -21,7 +22,7 @@ export default async function SelectRolePage() {
     if (session.user.hasProfile) {
       redirect('/dashboard');
     } else {
-      redirect(getSetupUrl(session.user.role));
+      redirect(getSetupUrl(session.user.role, 'dashboard'));
     }
   }
 
@@ -45,17 +46,4 @@ export default async function SelectRolePage() {
       </div>
     </div>
   );
-}
-
-function getSetupUrl(role: string): string {
-  switch (role) {
-    case 'TEACHER':
-      return '/profile/setup';
-    case 'RECRUITER':
-      return '/recruiter/setup';
-    case 'SCHOOL':
-      return '/school/setup';
-    default:
-      return '/dashboard';
-  }
 }

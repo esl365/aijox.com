@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { getSetupUrl } from '@/lib/utils/routing';
 
 export default auth((req) => {
   const { nextUrl } = req;
@@ -31,7 +32,7 @@ export default auth((req) => {
     }
     // If has role but no profile, redirect to setup
     if (!hasProfile) {
-      return NextResponse.redirect(new URL(getSetupUrl(userRole), nextUrl));
+      return NextResponse.redirect(new URL(getSetupUrl(userRole, 'select-role'), nextUrl));
     }
     // Otherwise go to dashboard
     return NextResponse.redirect(new URL('/dashboard', nextUrl));
@@ -57,7 +58,7 @@ export default auth((req) => {
 
   // If logged in with role but no profile, force profile setup
   if (isLoggedIn && userRole && !hasProfile && !isSetupRoute) {
-    return NextResponse.redirect(new URL(getSetupUrl(userRole), nextUrl));
+    return NextResponse.redirect(new URL(getSetupUrl(userRole, 'select-role'), nextUrl));
   }
 
   // Role-based access control for protected routes
@@ -90,22 +91,6 @@ export default auth((req) => {
 
   return NextResponse.next();
 });
-
-/**
- * Get setup URL based on user role
- */
-function getSetupUrl(role: string): string {
-  switch (role) {
-    case 'TEACHER':
-      return '/profile/setup';
-    case 'RECRUITER':
-      return '/recruiter/setup';
-    case 'SCHOOL':
-      return '/school/setup';
-    default:
-      return '/select-role';
-  }
-}
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],

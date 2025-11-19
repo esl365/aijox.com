@@ -10,6 +10,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { getSetupUrl } from '@/lib/utils/routing';
 
 export type SetRoleResult = {
   success: boolean;
@@ -38,33 +39,21 @@ export async function setUserRole(role: 'TEACHER' | 'RECRUITER' | 'SCHOOL'): Pro
 
     revalidatePath('/');
 
-    // Redirect based on role
-    const redirectUrl = getSetupUrl(role);
+    // Redirect based on role (uses centralized routing utility)
+    const redirectUrl = getSetupUrl(role, 'dashboard');
 
     return {
       success: true,
       message: `Role set to ${role}`,
       redirectUrl,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to set user role:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return {
       success: false,
-      error: error.message,
+      error: errorMessage,
       message: 'Failed to set role. Please try again.',
     };
-  }
-}
-
-function getSetupUrl(role: string): string {
-  switch (role) {
-    case 'TEACHER':
-      return '/profile/setup';
-    case 'RECRUITER':
-      return '/recruiter/setup';
-    case 'SCHOOL':
-      return '/school/setup';
-    default:
-      return '/dashboard';
   }
 }
