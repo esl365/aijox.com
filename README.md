@@ -1,6 +1,17 @@
-# AI JobX - Global Educator Nexus
+# Global Educator Nexus
 
-이 프로젝트는 SPARC Framework를 사용하여 체계적으로 개발됩니다.
+**AI-Powered Native English Teacher & International School ESL/EFL Recruitment Platform**
+
+이 프로젝트는 **영어 원어민 교사 전문 채용 플랫폼**으로, SPARC Framework를 사용하여 체계적으로 개발됩니다.
+
+## 🎯 프로젝트 개요
+
+- **타겟**: 영어 원어민 언어 강사 (ESL/EFL/IELTS/TOEFL) 및 국제학교 영어 교사
+- **핵심 기능**: 비디오 이력서 AI 분석으로 **억양, 원어민 여부, 발음** 자동 검증
+- **차별화 포인트**:
+  - 🎯 억양 타입별 매칭 (미국/영국/호주)
+  - 🛡️ 원어민 국적 기반 비자 자동 체크
+  - 🤖 AI 기반 ESL 교사-학교 자동 매칭
 
 ## 🚀 SPARC Framework 사용 가이드
 

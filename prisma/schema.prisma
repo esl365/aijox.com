@@ -1,5 +1,5 @@
 // Global Educator Nexus - Database Schema
-// AI-Powered International School Recruitment Platform
+// AI-Powered Native English Teacher & International School Recruitment Platform
 
 generator client {
   provider        = "prisma-client-js"
@@ -18,7 +18,7 @@ datasource db {
 
 enum UserRole {
   ADMIN      // Platform administrator
-  TEACHER    // Job seeker (educator)
+  TEACHER    // Job seeker (native English educator)
   SCHOOL     // Direct school hiring
   RECRUITER  // Third-party recruiter
 }
@@ -40,12 +40,67 @@ enum DegreeLevel {
   DOCTORATE
 }
 
+// Native English Speaker Countries (for E2/Z Visa eligibility)
+enum NativeSpeakerCountry {
+  USA            // United States
+  UK             // United Kingdom
+  CANADA         // Canada
+  AUSTRALIA      // Australia
+  NEW_ZEALAND    // New Zealand
+  IRELAND        // Ireland
+  SOUTH_AFRICA   // South Africa
+}
+
+// Accent/Dialect Types (for school preferences)
+enum AccentType {
+  NORTH_AMERICAN  // US/Canada
+  BRITISH         // UK/Ireland
+  AUSTRALIAN      // Australia/New Zealand
+  SOUTH_AFRICAN   // South Africa
+  NEUTRAL         // Neutral/International
+  MIXED           // Mixed/Multiple accents
+}
+
+// ESL/EFL Certifications (critical for native English teachers)
+enum ESLCertification {
+  TEFL       // Teaching English as a Foreign Language
+  TESOL      // Teaching English to Speakers of Other Languages
+  CELTA      // Certificate in English Language Teaching to Adults (Cambridge)
+  DELTA      // Diploma in English Language Teaching to Adults (Cambridge)
+  TRINITY_CERT_TESOL  // Trinity CertTESOL
+  TRINITY_DIP_TESOL   // Trinity DipTESOL
+  TKT        // Teaching Knowledge Test (Cambridge)
+  TESL       // Teaching English as a Second Language
+  OTHER      // Other relevant certification
+  NONE       // No ESL certification
+}
+
+// Teaching Subject Specialization (for native English teachers)
+enum TeachingSubject {
+  ESL              // General English as a Second Language
+  EFL              // English as a Foreign Language
+  ENGLISH_LANGUAGE // English Language Arts
+  ENGLISH_LITERATURE // English Literature
+  IELTS_PREP       // IELTS Test Preparation
+  TOEFL_PREP       // TOEFL Test Preparation
+  BUSINESS_ENGLISH // Business English
+  ACADEMIC_ENGLISH // Academic English
+  YOUNG_LEARNERS   // Young Learners (Kids)
+  ADULTS           // Adult ESL
+  CONVERSATION     // Conversation Classes
+  WRITING          // Writing Skills
+  GRAMMAR          // Grammar
+  PRONUNCIATION    // Pronunciation
+  OTHER            // Other subjects
+}
+
 enum VisaType {
-  E2_KOREA      // Korea E2 Visa
-  Z_CHINA       // China Z Visa
+  E2_KOREA      // Korea E2 Visa (Native speakers only)
+  Z_CHINA       // China Z Visa (Native speakers + 2yr exp)
+  TIER2_UK      // UK Tier 2 Work Visa
   WORK_PERMIT   // Generic work permit
   SPONSORSHIP   // Employer sponsorship
-  NOT_REQUIRED  // No visa needed
+  NOT_REQUIRED  // No visa needed (already has residency)
 }
 
 // ============================================================================
@@ -116,7 +171,7 @@ model VerificationToken {
 }
 
 // ============================================================================
-// TEACHER PROFILE (The Asset)
+// TEACHER PROFILE (The Asset - Native English Speaker Focus)
 // ============================================================================
 
 model TeacherProfile {
@@ -128,18 +183,37 @@ model TeacherProfile {
   firstName       String
   lastName        String
   phone           String?
-  country         String // Country of citizenship
-  city            String?
   dateOfBirth     DateTime?
   gender          String?
 
+  // *** CRITICAL: Native Speaker Verification ***
+  passportCountry       NativeSpeakerCountry  // Passport/Citizenship (for visa eligibility)
+  isNativeSpeaker       Boolean @default(false) // Self-declared native speaker status
+  nativeSpeakerVerified Boolean @default(false) // Admin/AI verified
+  currentCountry        String? // Current location
+  currentCity           String?
+
+  // Accent & Language Profile (AI-detected + self-reported)
+  accentType            AccentType? // Detected from video or self-reported
+  secondLanguages       String[] // Other languages spoken (bonus for some schools)
+
   // Professional Info
   degree          DegreeLevel
-  major           String?
+  major           String? // e.g., "English Literature", "Education", "Linguistics"
   university      String?
-  yearsExperience Int         @default(0)
-  subjects        String[] // Array of subjects they can teach
-  certifications  String[] // TEFL, CELTA, etc.
+  graduationYear  Int?
+  yearsExperience Int     @default(0) // Total years teaching experience
+  yearsESLExperience Int  @default(0) // Years specifically teaching ESL/EFL
+
+  // ESL/EFL Specialization
+  eslCertifications ESLCertification[] // Can have multiple (TEFL + CELTA, etc.)
+  certificationDetails String? @db.Text // Details: issuer, date, certificate number
+  teachingSubjects  TeachingSubject[]  // ESL, IELTS, Business English, etc.
+  ageGroupsExperience String[] // "3-5", "6-12", "13-18", "Adults"
+
+  // Additional Qualifications
+  otherCertifications String[] // "Licensed Teacher (State)", "Master Teacher", etc.
+  specializations     String[] // "Special Education", "Gifted Programs", etc.
 
   // Preferences
   preferredCountries String[] // Countries willing to work in
@@ -147,23 +221,47 @@ model TeacherProfile {
   minSalaryUSD       Int? // Minimum acceptable salary in USD
   housingRequired    Boolean  @default(false)
   flightRequired     Boolean  @default(false)
+  contractType       String[] // "Full-time", "Part-time", "Contract", "Online"
 
   // Media
   resumeUrl    String? // Traditional resume (PDF)
-  videoResumeUrl String? // Video introduction (R2 URL)
+  videoResumeUrl String? // Video introduction (R2 URL) - CRITICAL for accent verification
   photoUrl     String? // Profile photo
 
   // AI Analysis Results (JSONB for flexibility)
-  videoAnalysis Json? // { accent_type, clarity_score, energy_level, appearance_check, summary }
-  visaStatus    Json? // { kr: { eligible: true/false, reason: "..." }, cn: {...}, ... }
+  videoAnalysis Json?
+  // {
+  //   accent_type: "North American" | "British" | "Australian" | "South African",
+  //   accent_clarity: 1-10,
+  //   native_confidence_score: 0-100 (AI's confidence that speaker is native),
+  //   energy_level: "High" | "Medium" | "Low",
+  //   professionalism_score: 1-10,
+  //   pronunciation_quality: 1-10,
+  //   grammar_accuracy: 1-10,
+  //   appearance_check: "Professional" | "Casual",
+  //   summary: "Detailed AI analysis",
+  //   red_flags: [] // Any concerns detected
+  // }
+
+  visaStatus    Json?
+  // {
+  //   kr: { eligible: true/false, reason: "Native speaker from USA, eligible for E2", visa_type: "E2" },
+  //   cn: { eligible: true/false, reason: "2+ years exp required", visa_type: "Z" },
+  //   ...
+  // }
 
   // Vector Embedding (1536 dimensions for text-embedding-3-small)
-  // Used for RAG-based job matching
+  // Includes: teaching experience, certifications, subjects, accent type, preferences
   embedding Unsupported("vector(1536)")?
 
-  // Criminal Background Check
+  // Background Check (Required for most international schools)
   criminalRecordClean Boolean @default(false)
   backgroundCheckDate DateTime?
+  backgroundCheckCountry String? // Which country's check
+
+  // References
+  hasReferences   Boolean @default(false)
+  referencesJson  Json? // Encrypted reference contact info
 
   // Profile Status
   profileComplete Boolean  @default(false)
@@ -180,9 +278,12 @@ model TeacherProfile {
   applications Application[]
   savedJobs    SavedJob[]
 
-  @@index([country])
+  @@index([passportCountry])
+  @@index([isNativeSpeaker])
+  @@index([accentType])
+  @@index([eslCertifications])
+  @@index([teachingSubjects])
   @@index([preferredCountries])
-  @@index([subjects])
   @@index([minSalaryUSD])
   @@index([profileComplete])
   @@index([isActive])
@@ -208,6 +309,12 @@ model SchoolProfile {
   // School Type
   curriculum String[] // IB, AP, British, American, etc.
   grades     String[] // K-12, etc.
+  studentCount Int?
+  teacherCount Int?
+
+  // Language Program Details
+  eslProgramSize String? // "Small (<50)", "Medium (50-200)", "Large (200+)"
+  preferredAccents AccentType[] // Preferred teacher accents
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -226,6 +333,10 @@ model RecruiterProfile {
   description String? @db.Text
   logoUrl     String?
 
+  // Specialization
+  specializesInESL Boolean @default(true) // Most recruiters on this platform will
+  countries        String[] // Countries they recruit for
+
   // Credits for "Reveal Contact" feature
   credits Int @default(0)
 
@@ -234,7 +345,7 @@ model RecruiterProfile {
 }
 
 // ============================================================================
-// JOB POSTINGS (The Bait)
+// JOB POSTINGS (The Bait - Native English Teacher Focus)
 // ============================================================================
 
 model JobPosting {
@@ -251,40 +362,57 @@ model JobPosting {
   address String?
 
   // Position Details
-  title           String
-  subject         String // Math, English, Science, etc.
-  grades          String[] // Grade levels to teach
-  positionType    String   @default("Full-time") // Full-time, Part-time, Contract
+  title           String // "ESL Teacher", "English Teacher", "IELTS Instructor"
+  teachingSubjects TeachingSubject[] // ESL, EFL, IELTS, etc.
+  grades          String[] // Grade levels or "Adults"
+  positionType    String   @default("Full-time") // Full-time, Part-time, Contract, Online
   startDate       DateTime?
   contractLength  Int? // In months
 
+  // *** CRITICAL: Native Speaker Requirements ***
+  nativeSpeakerRequired     Boolean @default(true) // Most positions require this
+  acceptedNativeCountries   NativeSpeakerCountry[] // Which passports accepted
+  preferredAccent           AccentType? // Some schools prefer specific accents
+  nonNativeConsidered       Boolean @default(false) // Will consider near-native speakers
+
   // Requirements
-  requiredDegree      DegreeLevel
-  requiredExperience  Int         @default(0) // Minimum years
-  requiredCerts       String[] // Required certifications
-  visaType            VisaType
-  visaSponsored       Boolean     @default(false)
+  requiredDegree       DegreeLevel
+  requiredExperience   Int         @default(0) // Minimum years
+  requiredESLCerts     ESLCertification[] // Required ESL certifications
+  preferredESLCerts    ESLCertification[] // Preferred but not required
+  minAgeGroupExp       String[] // "6-12", "Adults", etc.
+
+  visaType             VisaType
+  visaSponsored        Boolean @default(false)
+  backgroundCheckRequired Boolean @default(true)
 
   // Compensation (normalized to USD)
   salaryUSD        Int // Monthly salary converted to USD
   salaryCurrency   String  @default("USD")
   salaryOriginal   Float? // Original amount before conversion
+  salaryRange      String? // "2000-2500 USD"
 
   // Benefits
   housingProvided  Boolean @default(false)
+  housingAllowance Int? // USD per month
   flightProvided   Boolean @default(false)
+  flightAllowance  Int? // USD per year
   healthInsurance  Boolean @default(false)
-  otherBenefits    String?
+  pensionProvided  Boolean @default(false)
+  paidHolidays     Int? // Days per year
+  otherBenefits    String? @db.Text
 
   // Job Description
   description      String  @db.Text
   responsibilities String? @db.Text
   qualifications   String? @db.Text
+  idealCandidate   String? @db.Text // "Native speaker with British accent preferred"
 
   // Status
   isActive    Boolean  @default(true)
   isFeatured  Boolean  @default(false)
   expiresAt   DateTime?
+  urgentHiring Boolean @default(false) // For immediate positions
 
   // SEO & Analytics
   slug        String   @unique // URL-friendly slug
@@ -303,7 +431,9 @@ model JobPosting {
 
   @@index([country])
   @@index([city])
-  @@index([subject])
+  @@index([teachingSubjects])
+  @@index([nativeSpeakerRequired])
+  @@index([acceptedNativeCountries])
   @@index([salaryUSD])
   @@index([isActive])
   @@index([createdAt])
@@ -328,10 +458,15 @@ model Application {
 
   // AI Matching Score (calculated at application time)
   aiMatchScore Int? // 0-100
+  matchReasons String[] // ["Native speaker match", "Accent preference match", "Salary aligned"]
 
   // Cover Letter & Resume
   coverLetter String? @db.Text // AI-generated or manual
   resumeUrl   String? // Snapshot of resume at application time
+
+  // Native Speaker Verification Status
+  nativeStatusVerified Boolean @default(false) // Whether admin verified native status
+  visaEligibilityChecked Boolean @default(false) // Auto-checked against job requirements
 
   // Tracking
   appliedAt  DateTime  @default(now())
@@ -340,17 +475,21 @@ model Application {
 
   // Interview
   interviewScheduledAt DateTime?
+  interviewType        String? // "Video", "Phone", "In-person", "Demo Lesson"
   interviewNotes       String?   @db.Text
 
   // Rejection
   rejectedAt   DateTime?
-  rejectReason String? // "Visa Issue", "Underqualified", etc. (MARKET DATA)
+  rejectReason String?
+  // "Non-native speaker", "Insufficient ESL certification",
+  // "Accent mismatch", "Visa ineligible", "Overqualified", "Underqualified"
 
   // Offer
   offerMadeAt       DateTime?
   offerSalaryUSD    Int?
   offerAcceptedAt   DateTime?
   offerRejectedAt   DateTime?
+  offerRejectReason String?
 
   // Hired
   hiredAt   DateTime?
@@ -379,6 +518,7 @@ model SavedJob {
   job   JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId String
 
+  notes   String? // Teacher's personal notes about this job
   savedAt DateTime @default(now())
 
   @@unique([teacherId, jobId])
@@ -396,7 +536,9 @@ model Notification {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
 
-  type    String // "NEW_JOB_MATCH", "APPLICATION_STATUS", "MESSAGE", etc.
+  type    String
+  // "NEW_JOB_MATCH", "APPLICATION_STATUS", "NATIVE_VERIFICATION",
+  // "VIDEO_ANALYZED", "URGENT_JOB", "SALARY_INCREASE"
   title   String
   message String @db.Text
   link    String? // URL to related content
@@ -418,7 +560,13 @@ model SearchMetric {
 
   // What was searched
   query   String
-  filters Json? // { country: "korea", subject: "math", ... }
+  filters Json?
+  // {
+  //   country: "korea",
+  //   subject: "ESL",
+  //   nativeSpeakerOnly: true,
+  //   accent: "North American"
+  // }
 
   // Results
   resultsCount Int
@@ -451,7 +599,7 @@ model PageView {
 }
 
 // ============================================================================
-// GEO DATA (for SEO/AEO)
+// GEO DATA (for SEO/AEO - ESL Market Focus)
 // ============================================================================
 
 model GeoData {
@@ -463,15 +611,49 @@ model GeoData {
   avgSalaryUSD      Int
   totalJobs         Int      @default(0)
   totalTeachers     Int      @default(0)
+  nativeSpeakerDemand Float  @default(0) // % of jobs requiring native speakers
   housingProvidedPct Float   @default(0)
-  visaTypes          String[] // Common visa types
+
+  // ESL-specific data
+  preferredAccents    AccentType[] // Most requested accents in this country
+  commonVisaTypes     VisaType[]
+  avgESLExperience    Int @default(0) // Average years required
+  topESLCerts         ESLCertification[] // Most valued certifications
+
   topCities          String[] // Top hiring cities
-  topSubjects        String[] // In-demand subjects
+  topSubjects        String[] // ESL, IELTS, Business English, etc.
 
   // For LLM consumption
-  summary String? @db.Text // AI-friendly description
+  summary String? @db.Text
+  // "South Korea requires native English speakers from E2 visa countries.
+  // North American accent preferred. Average salary $2,100/month with housing."
 
   updatedAt DateTime @updatedAt
 
   @@index([country])
+}
+
+// ============================================================================
+// ACCENT PREFERENCE TRACKING (Market Intelligence)
+// ============================================================================
+
+model AccentPreference {
+  id String @id @default(cuid())
+
+  country     String
+  city        String?
+  accentType  AccentType
+
+  // Demand metrics
+  jobCount       Int @default(0) // How many jobs prefer this accent
+  teacherCount   Int @default(0) // How many teachers have this accent
+  demandRatio    Float @default(0) // jobCount / teacherCount (market gap)
+
+  avgSalaryUSD   Int? // Average salary for this accent in this location
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([country, accentType])
+  @@index([country])
+  @@index([demandRatio])
 }
