@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: 'Choose your role to get started',
 };
 
+// Force dynamic rendering to avoid build-time auth issues
+export const dynamic = 'force-dynamic';
+
 export default async function SelectRolePage() {
   const session = await auth();
 

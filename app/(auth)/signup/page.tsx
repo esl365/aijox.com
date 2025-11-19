@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: 'Create your account and join thousands of educators worldwide',
 };
 
+// Force dynamic rendering to avoid build-time auth issues
+export const dynamic = 'force-dynamic';
+
 export default async function SignupPage({
   searchParams,
 }: {
