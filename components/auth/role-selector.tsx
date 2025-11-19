@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,33 +40,42 @@ const roleOptions: RoleOption[] = [
 
 export function RoleSelector() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleRoleSelect = async (role: Role) => {
-    setSelectedRole(role);
-    setIsLoading(true);
-    setError(null);
+  // Refinement.md:696-724 - Optimistic UI updates with useOptimistic
+  const [isPending, startTransition] = useTransition();
+  const [optimisticRole, setOptimisticRole] = useOptimistic<Role | null>(
+    null,
+    (_state, newRole: Role) => newRole
+  );
 
-    try {
-      const result = await setUserRole(role);
+  const handleRoleSelect = (role: Role) => {
+    startTransition(async () => {
+      // Immediately update UI (optimistic)
+      setOptimisticRole(role);
+      setError(null);
 
-      if (!result.success) {
-        setError(result.message || 'Failed to set role. Please try again.');
-        setIsLoading(false);
-        return;
+      try {
+        const result = await setUserRole(role);
+
+        if (!result.success) {
+          // Rollback on error
+          setOptimisticRole(null);
+          setError(result.message || 'Failed to set role. Please try again.');
+          return;
+        }
+
+        if (result.redirectUrl) {
+          router.push(result.redirectUrl);
+          router.refresh();
+        }
+      } catch (err) {
+        // Rollback on error
+        setOptimisticRole(null);
+        console.error('Failed to set role:', err);
+        setError('Something went wrong. Please try again.');
       }
-
-      if (result.redirectUrl) {
-        router.push(result.redirectUrl);
-        router.refresh();
-      }
-    } catch (err) {
-      console.error('Failed to set role:', err);
-      setError('Something went wrong. Please try again.');
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -80,20 +89,26 @@ export function RoleSelector() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {roleOptions.map((option) => {
           const Icon = option.icon;
-          const isSelected = selectedRole === option.value;
-          const isDisabled = isLoading;
+          const isSelected = optimisticRole === option.value;
+          const isDisabled = isPending;
 
           return (
             <Card
               key={option.value}
               className={`cursor-pointer transition-all hover:shadow-lg ${
-                isSelected ? 'ring-2 ring-primary' : ''
+                isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
               } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => !isDisabled && handleRoleSelect(option.value)}
             >
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Icon className="w-8 h-8 text-primary" />
+                <div className={`mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${
+                  isSelected ? 'bg-primary text-white' : 'bg-primary/10'
+                }`}>
+                  {isSelected && isPending ? (
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  ) : (
+                    <Icon className={`w-8 h-8 ${isSelected ? 'text-white' : 'text-primary'}`} />
+                  )}
                 </div>
                 <CardTitle>{option.label}</CardTitle>
                 <CardDescription className="min-h-[3rem]">
@@ -110,11 +125,13 @@ export function RoleSelector() {
                     if (!isDisabled) handleRoleSelect(option.value);
                   }}
                 >
-                  {isLoading && isSelected ? (
+                  {isPending && isSelected ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Setting up...
                     </>
+                  ) : isSelected ? (
+                    'Selected'
                   ) : (
                     `Continue as ${option.label}`
                   )}

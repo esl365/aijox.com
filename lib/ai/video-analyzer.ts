@@ -10,6 +10,7 @@ import type { CoreMessage } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { SCORING_CONFIG } from '@/lib/config/scoring';
+import { trackAICost } from '@/lib/ai/cost-tracker';
 
 // Zod schema for type-safe AI responses
 export const VideoAnalysisSchema = z.object({
@@ -89,10 +90,11 @@ OUTPUT ONLY VALID JSON matching the schema. No additional commentary.`;
  * Analyzes a teacher video resume using GPT-4o
  *
  * @param videoUrl - Public URL to the video file (R2 CDN URL)
+ * @param userId - Optional user ID for cost tracking
  * @returns Structured analysis results
  * @throws Error if video is inaccessible or AI service fails
  */
-export async function analyzeVideo(videoUrl: string): Promise<VideoAnalysis> {
+export async function analyzeVideo(videoUrl: string, userId?: string): Promise<VideoAnalysis> {
   if (!videoUrl || !isValidUrl(videoUrl)) {
     throw new Error('Invalid video URL provided');
   }
@@ -123,6 +125,22 @@ export async function analyzeVideo(videoUrl: string): Promise<VideoAnalysis> {
       temperature: 0.3, // Low temperature for consistency across analyses
       maxTokens: 1500,
     });
+
+    // Track AI cost (Phase 5-3.2)
+    if (userId && result.usage) {
+      await trackAICost({
+        userId,
+        operation: 'video-analysis',
+        provider: 'openai',
+        model: 'gpt-4o',
+        inputTokens: result.usage.promptTokens,
+        outputTokens: result.usage.completionTokens,
+        metadata: {
+          videoUrl,
+          overallScore: result.object.overall_score,
+        },
+      });
+    }
 
     return result.object;
   } catch (error) {
@@ -260,13 +278,14 @@ function isValidUrl(url: string): boolean {
  */
 export async function analyzeVideoWithRetry(
   videoUrl: string,
+  userId?: string,
   maxRetries = 3
 ): Promise<VideoAnalysis> {
   let lastError: Error;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await analyzeVideo(videoUrl);
+      return await analyzeVideo(videoUrl, userId);
     } catch (error) {
       lastError = error as Error;
       console.warn(`Analysis attempt ${attempt} failed:`, error);

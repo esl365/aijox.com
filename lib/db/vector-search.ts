@@ -8,6 +8,7 @@ import { prisma } from '@/lib/db';
 import type { Prisma } from '@prisma/client';
 import type { VideoAnalysis } from '@/lib/ai/video-analyzer';
 import type { VisaStatusCache } from '@/lib/matching/filter-candidates';
+import { getCachedMatches, cacheMatches, recordCacheHit, recordCacheMiss } from '@/lib/cache/match-cache';
 
 export type TeacherMatch = {
   id: string;
@@ -29,6 +30,8 @@ export type TeacherMatch = {
 /**
  * Find teachers matching a job posting using vector similarity
  *
+ * Refinement.md:160-174 - Added Redis caching for performance
+ *
  * @param jobId - Job posting ID
  * @param minSimilarity - Minimum cosine similarity (0-1)
  * @param limit - Maximum number of results
@@ -39,6 +42,14 @@ export async function findMatchingTeachers(
   minSimilarity: number = 0.85,
   limit: number = 20
 ): Promise<TeacherMatch[]> {
+  // 0. Check cache first (1 hour TTL)
+  const cached = await getCachedMatches(jobId);
+  if (cached) {
+    recordCacheHit();
+    return cached;
+  }
+  recordCacheMiss();
+
   // 1. Get job with embedding
   const job = await prisma.jobPosting.findUnique({
     where: { id: jobId },
@@ -89,6 +100,9 @@ export async function findMatchingTeachers(
     ORDER BY similarity DESC
     LIMIT ${limit}
   `;
+
+  // 3. Cache results for future requests
+  await cacheMatches(jobId, matches);
 
   return matches;
 }

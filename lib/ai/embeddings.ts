@@ -6,22 +6,26 @@
 
 import { embed } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { trackAICost } from '@/lib/ai/cost-tracker';
 
 /**
  * Generate embedding for a job posting
  * Creates rich semantic representation for similarity search
  */
-export async function generateJobEmbedding(job: {
-  title: string;
-  subject: string;
-  city: string;
-  country: string;
-  schoolType?: string;
-  requirements?: string;
-  benefits?: string;
-  cultureFit?: string;
-  description?: string;
-}): Promise<number[]> {
+export async function generateJobEmbedding(
+  job: {
+    title: string;
+    subject: string;
+    city: string;
+    country: string;
+    schoolType?: string;
+    requirements?: string;
+    benefits?: string;
+    cultureFit?: string;
+    description?: string;
+  },
+  userId?: string
+): Promise<number[]> {
   // Create comprehensive text representation
   const textToEmbed = `
 Position: ${job.title}
@@ -35,12 +39,27 @@ Description: ${job.description || 'Not specified'}
   `.trim();
 
   try {
-    const { embedding } = await embed({
+    const result = await embed({
       model: openai.embedding('text-embedding-3-small'),
       value: textToEmbed,
     });
 
-    return embedding; // Returns number[] of length 1536
+    // Track AI cost (Phase 5-3.2)
+    if (userId && result.usage) {
+      await trackAICost({
+        userId,
+        operation: 'embedding',
+        provider: 'openai',
+        model: 'text-embedding-3-small',
+        inputTokens: result.usage.tokens,
+        metadata: {
+          type: 'job',
+          title: job.title,
+        },
+      });
+    }
+
+    return result.embedding; // Returns number[] of length 1536
   } catch (error: any) {
     console.error('Job embedding generation failed:', error);
     throw new Error(`Failed to generate job embedding: ${error.message}`);
@@ -51,17 +70,20 @@ Description: ${job.description || 'Not specified'}
  * Generate embedding for a teacher profile
  * Captures teaching experience, skills, and preferences
  */
-export async function generateTeacherEmbedding(teacher: {
-  subjects: string[];
-  yearsExperience: number;
-  certifications: string[];
-  preferredCountries: string[];
-  teachingStrengths?: string;
-  bio?: string;
-  specializations?: string[];
-  degreeLevel?: string;
-  degreeMajor?: string;
-}): Promise<number[]> {
+export async function generateTeacherEmbedding(
+  teacher: {
+    subjects: string[];
+    yearsExperience: number;
+    certifications: string[];
+    preferredCountries: string[];
+    teachingStrengths?: string;
+    bio?: string;
+    specializations?: string[];
+    degreeLevel?: string;
+    degreeMajor?: string;
+  },
+  userId?: string
+): Promise<number[]> {
   const textToEmbed = `
 Teaching Experience: ${teacher.yearsExperience} years teaching ${teacher.subjects.join(', ')}
 Certifications: ${teacher.certifications.join(', ')}
@@ -73,12 +95,27 @@ Professional Bio: ${teacher.bio || 'Dedicated teacher'}
   `.trim();
 
   try {
-    const { embedding } = await embed({
+    const result = await embed({
       model: openai.embedding('text-embedding-3-small'),
       value: textToEmbed,
     });
 
-    return embedding;
+    // Track AI cost (Phase 5-3.2)
+    if (userId && result.usage) {
+      await trackAICost({
+        userId,
+        operation: 'embedding',
+        provider: 'openai',
+        model: 'text-embedding-3-small',
+        inputTokens: result.usage.tokens,
+        metadata: {
+          type: 'teacher',
+          subjects: teacher.subjects,
+        },
+      });
+    }
+
+    return result.embedding;
   } catch (error: any) {
     console.error('Teacher embedding generation failed:', error);
     throw new Error(`Failed to generate teacher embedding: ${error.message}`);

@@ -70,6 +70,7 @@ model User {
   teacherProfile   TeacherProfile?
   recruiterProfile RecruiterProfile?
   schoolProfile    SchoolProfile?
+  aiUsage          AIUsage[]
 }
 
 // Teacher Profile (The Asset)
@@ -322,4 +323,24 @@ model Document {
   teacher   TeacherProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
+}
+
+// AI Usage Tracking (Phase 5-3.2)
+model AIUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  operation String   // "video-analysis", "embedding", "email-generation"
+  provider  String   // "openai", "anthropic"
+  model     String   // "gpt-4o", "claude-3-5-sonnet"
+
+  tokensUsed Int
+  costUSD    Float
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([operation])
 }

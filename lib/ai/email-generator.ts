@@ -8,6 +8,7 @@ import { generateText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import type { FilteredCandidate } from '@/lib/matching/filter-candidates';
 import type { JobPosting } from '@prisma/client';
+import { trackAICost } from '@/lib/ai/cost-tracker';
 
 export type EmailContent = {
   subject: string;
@@ -39,7 +40,8 @@ export async function generateOutreachEmail(
     startDate?: Date;
   },
   matchReasons: string[],
-  similarity: number
+  similarity: number,
+  userId?: string
 ): Promise<EmailContent> {
   const matchPercentage = Math.round(similarity * 100);
 
@@ -80,22 +82,39 @@ OUTPUT FORMAT:
 Return ONLY the email body text. Do not include subject line or greetings (we'll add those).`;
 
   try {
-    const { text } = await generateText({
+    const result = await generateText({
       model: anthropic('claude-3-5-sonnet-20241022'),
       prompt,
       temperature: 0.7, // Some creativity for personalization
       maxTokens: 400,
     });
 
+    // Track AI cost (Phase 5-3.2)
+    if (userId && result.usage) {
+      await trackAICost({
+        userId,
+        operation: 'email-generation',
+        provider: 'anthropic',
+        model: 'claude-3-5-sonnet-20241022',
+        inputTokens: result.usage.promptTokens,
+        outputTokens: result.usage.completionTokens,
+        metadata: {
+          teacherName: `${teacher.firstName} ${teacher.lastName}`,
+          jobTitle: job.title,
+          matchPercentage,
+        },
+      });
+    }
+
     // Generate subject line
     const subject = generateSubjectLine(teacher.firstName, job, matchPercentage);
 
     // Generate preview text (first line)
-    const preview = text.split('\n')[0].slice(0, 100);
+    const preview = result.text.split('\n')[0].slice(0, 100);
 
     return {
       subject,
-      body: text.trim(),
+      body: result.text.trim(),
       preview
     };
 
