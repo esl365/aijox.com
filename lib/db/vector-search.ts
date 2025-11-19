@@ -147,6 +147,9 @@ export async function findMatchingJobs(
 /**
  * Search teachers by multiple criteria (hybrid search)
  * Combines vector similarity with traditional filters
+ *
+ * SECURITY: Uses Prisma's safe filtering where possible to prevent SQL injection
+ * For complex vector queries, uses parameterized $queryRaw
  */
 export async function hybridTeacherSearch({
   jobId,
@@ -165,89 +168,153 @@ export async function hybridTeacherSearch({
   minSimilarity?: number;
   limit?: number;
 }) {
-  let embedding: any = null;
+  // OPTION 1: Use Prisma's safe filtering (preferred when no vector search)
+  if (!jobId) {
+    const whereClause: Prisma.TeacherProfileWhereInput = {
+      status: 'ACTIVE',
+      profileCompleteness: { gte: 60 },
+    }
 
-  // Get job embedding if jobId provided
-  if (jobId) {
-    const job = await prisma.jobPosting.findUnique({
-      where: { id: jobId },
-      select: { embedding: true }
-    });
-    embedding = job?.embedding;
+    if (subjects && subjects.length > 0) {
+      whereClause.subjects = { hasSome: subjects }
+    }
+
+    if (countries && countries.length > 0) {
+      whereClause.preferredCountries = { hasSome: countries }
+    }
+
+    if (minExperience) {
+      whereClause.yearsExperience = { gte: minExperience }
+    }
+
+    if (maxSalary) {
+      whereClause.OR = [
+        { minSalaryUSD: null },
+        { minSalaryUSD: { lte: maxSalary } }
+      ]
+    }
+
+    const results = await prisma.teacherProfile.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        userId: true,
+        firstName: true,
+        lastName: true,
+        user: {
+          select: { email: true }
+        },
+        subjects: true,
+        yearsExperience: true,
+        citizenship: true,
+        videoAnalysis: true,
+        profileCompleteness: true
+      },
+      orderBy: [
+        { profileCompleteness: 'desc' },
+        { yearsExperience: 'desc' }
+      ],
+      take: limit
+    })
+
+    // Transform to match TeacherMatch type
+    return results.map(r => ({
+      ...r,
+      email: r.user.email,
+      similarity: 1,
+      distance: 0
+    })) as any
   }
 
-  // Build dynamic WHERE conditions
-  const conditions: string[] = [
-    't.status = \'ACTIVE\'',
-    't."profileCompleteness" >= 60'
-  ];
+  // OPTION 2: Vector search with parameterized query (SQL injection safe)
+  const job = await prisma.jobPosting.findUnique({
+    where: { id: jobId },
+    select: { embedding: true }
+  })
 
-  if (embedding) {
-    conditions.push(`1 - (t.embedding <=> '${embedding}'::vector) >= ${minSimilarity}`);
+  if (!job?.embedding) {
+    throw new Error('Job embedding not found. Please regenerate job posting.')
   }
 
+  // Build WHERE conditions with safe parameterization
+  const params: any[] = []
+  let paramIndex = 1
+
+  // Base conditions
+  let whereConditions = `
+    t.status = 'ACTIVE'
+    AND t."profileCompleteness" >= 60
+  `
+
+  // Vector similarity condition
+  whereConditions += ` AND 1 - (t.embedding <=> $${paramIndex}::vector) >= $${paramIndex + 1}`
+  params.push(job.embedding, minSimilarity)
+  paramIndex += 2
+
+  // Subjects filter (safe array comparison)
   if (subjects && subjects.length > 0) {
-    const subjectsList = subjects.map(s => `'${s}'`).join(',');
-    conditions.push(`t.subjects && ARRAY[${subjectsList}]::text[]`);
+    whereConditions += ` AND t.subjects && $${paramIndex}::text[]`
+    params.push(subjects)
+    paramIndex++
   }
 
+  // Countries filter
   if (countries && countries.length > 0) {
-    const countriesList = countries.map(c => `'${c}'`).join(',');
-    conditions.push(`t."preferredCountries" && ARRAY[${countriesList}]::text[]`);
+    whereConditions += ` AND t."preferredCountries" && $${paramIndex}::text[]`
+    params.push(countries)
+    paramIndex++
   }
 
+  // Experience filter
   if (minExperience) {
-    conditions.push(`t."yearsExperience" >= ${minExperience}`);
+    whereConditions += ` AND t."yearsExperience" >= $${paramIndex}`
+    params.push(minExperience)
+    paramIndex++
   }
 
+  // Salary filter
   if (maxSalary) {
-    conditions.push(`(t."minSalaryUSD" IS NULL OR t."minSalaryUSD" <= ${maxSalary})`);
+    whereConditions += ` AND (t."minSalaryUSD" IS NULL OR t."minSalaryUSD" <= $${paramIndex})`
+    params.push(maxSalary)
+    paramIndex++
   }
 
-  const whereClause = conditions.join(' AND ');
+  // Limit parameter
+  whereConditions += ` LIMIT $${paramIndex}`
+  params.push(limit)
 
-  const query = embedding
-    ? `
-      SELECT
-        t.id,
-        t."userId",
-        t."firstName",
-        t."lastName",
-        u.email,
-        t.subjects,
-        t."yearsExperience",
-        t.citizenship,
-        t."videoAnalysis",
-        t.embedding <=> '${embedding}'::vector AS distance,
-        1 - (t.embedding <=> '${embedding}'::vector) AS similarity
-      FROM "TeacherProfile" t
-      INNER JOIN "User" u ON u.id = t."userId"
-      WHERE ${whereClause}
-      ORDER BY similarity DESC
-      LIMIT ${limit}
-    `
-    : `
-      SELECT
-        t.id,
-        t."userId",
-        t."firstName",
-        t."lastName",
-        u.email,
-        t.subjects,
-        t."yearsExperience",
-        t.citizenship,
-        t."videoAnalysis",
-        0 AS distance,
-        1 AS similarity
-      FROM "TeacherProfile" t
-      INNER JOIN "User" u ON u.id = t."userId"
-      WHERE ${whereClause}
-      ORDER BY t."profileCompleteness" DESC, t."yearsExperience" DESC
-      LIMIT ${limit}
-    `;
+  // Execute safe parameterized query
+  const matches = await prisma.$queryRaw<TeacherMatch[]>`
+    SELECT
+      t.id,
+      t."userId",
+      t."firstName",
+      t."lastName",
+      u.email,
+      t.subjects,
+      t."yearsExperience",
+      t.citizenship,
+      t."preferredCountries",
+      t."minSalaryUSD",
+      t."videoAnalysis",
+      t."visaStatus",
+      t.embedding <=> ${Prisma.raw(params[0])}::vector AS distance,
+      1 - (t.embedding <=> ${Prisma.raw(params[0])}::vector) AS similarity
+    FROM "TeacherProfile" t
+    INNER JOIN "User" u ON u.id = t."userId"
+    WHERE
+      t.status = 'ACTIVE'
+      AND t."profileCompleteness" >= 60
+      AND 1 - (t.embedding <=> ${Prisma.raw(params[0])}::vector) >= ${params[1]}
+      ${subjects && subjects.length > 0 ? Prisma.sql`AND t.subjects && ${subjects}::text[]` : Prisma.empty}
+      ${countries && countries.length > 0 ? Prisma.sql`AND t."preferredCountries" && ${countries}::text[]` : Prisma.empty}
+      ${minExperience ? Prisma.sql`AND t."yearsExperience" >= ${minExperience}` : Prisma.empty}
+      ${maxSalary ? Prisma.sql`AND (t."minSalaryUSD" IS NULL OR t."minSalaryUSD" <= ${maxSalary})` : Prisma.empty}
+    ORDER BY similarity DESC
+    LIMIT ${limit}
+  `
 
-  const results = await prisma.$queryRawUnsafe(query);
-  return results as TeacherMatch[];
+  return matches
 }
 
 /**
