@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useOptimistic, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,12 +42,9 @@ export function RoleSelector() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  // Refinement.md:696-724 - Optimistic UI updates with useOptimistic
+  // Refinement.md:696-724 - Optimistic UI updates
   const [isPending, startTransition] = useTransition();
-  const [optimisticRole, setOptimisticRole] = useOptimistic<Role | null>(
-    null,
-    (_state, newRole: Role) => newRole
-  );
+  const [optimisticRole, setOptimisticRole] = useState<Role | null>(null);
 
   const handleRoleSelect = (role: Role) => {
     startTransition(async () => {

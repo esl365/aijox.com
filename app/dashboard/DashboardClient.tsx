@@ -241,9 +241,9 @@ export function DashboardClient({ data, recommendedJobs, userName }: DashboardCl
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {data.visaStatus.eligible.slice(0, 5).map((item) => (
-                        <Badge key={item.country} variant="secondary">
-                          {item.country}
+                      {data.visaStatus.eligible.slice(0, 5).map((country) => (
+                        <Badge key={country} variant="secondary">
+                          {country}
                         </Badge>
                       ))}
                       {data.visaStatus.eligible.length > 5 && (

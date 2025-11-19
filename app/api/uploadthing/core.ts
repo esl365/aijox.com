@@ -14,13 +14,13 @@ const f = createUploadthing();
 export const ourFileRouter = {
   /**
    * Teacher video resume uploader
-   * - Max 100MB
+   * - Max 64MB
    * - MP4, WebM, MOV formats
    * - One video per teacher
    */
   videoResume: f({
     video: {
-      maxFileSize: '100MB',
+      maxFileSize: '64MB',
       maxFileCount: 1,
     },
   })
@@ -127,12 +127,12 @@ export const ourFileRouter = {
 
   /**
    * Document uploader (certificates, degrees, etc.)
-   * - Max 10MB
+   * - Max 8MB
    * - PDF, JPG, PNG formats
    */
   documents: f({
-    pdf: { maxFileSize: '10MB', maxFileCount: 5 },
-    image: { maxFileSize: '10MB', maxFileCount: 5 },
+    pdf: { maxFileSize: '8MB', maxFileCount: 5 },
+    image: { maxFileSize: '8MB', maxFileCount: 5 },
   })
     .middleware(async () => {
       const session = await auth();

@@ -50,12 +50,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Update user profile completion status
+    // Update user name with company name
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
         name: validatedData.companyName,
-        hasProfile: true,
       },
     });
 
