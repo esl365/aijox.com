@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 /**
  * AI Model Pricing (per 1M tokens)
@@ -95,7 +96,7 @@ export async function trackAICost({
         model,
         tokensUsed: totalTokens,
         costUSD,
-        metadata: metadata || null,
+        metadata: metadata || Prisma.DbNull,
       },
     });
 
