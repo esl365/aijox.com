@@ -50,12 +50,12 @@ export async function findMatchingTeachers(
   }
   recordCacheMiss();
 
-  // 1. Get job with embedding
+  // TODO: Enable when embedding field is added to schema
+  // 1. Get job details
   const job = await prisma.jobPosting.findUnique({
     where: { id: jobId },
     select: {
       id: true,
-      embedding: true,
       country: true,
       subject: true,
       minYearsExperience: true,
@@ -67,39 +67,65 @@ export async function findMatchingTeachers(
     throw new Error('Job not found');
   }
 
+  /* TODO: Enable vector search when embedding field is added
   if (!job.embedding) {
-    throw new Error('Job embedding not generated. Please regenerate job posting.');
+    throw new Error('Job embedding not generated.');
   }
 
-  // 2. Perform vector similarity search using pgvector
-  // Note: pgvector uses <=> for cosine distance
-  // Similarity = 1 - distance
   const matches = await prisma.$queryRaw<TeacherMatch[]>`
-    SELECT
-      t.id,
-      t."userId",
-      t."firstName",
-      t."lastName",
-      u.email,
-      t.subjects,
-      t."yearsExperience",
-      t.citizenship,
-      t."preferredCountries",
-      t."minSalaryUSD",
-      t."videoAnalysis",
-      t."visaStatus",
-      t.embedding <=> ${job.embedding}::vector AS distance,
-      1 - (t.embedding <=> ${job.embedding}::vector) AS similarity
+    SELECT ...
+    t.embedding <=> ${job.embedding}::vector AS distance
     FROM "TeacherProfile" t
-    INNER JOIN "User" u ON u.id = t."userId"
-    WHERE
-      t.embedding IS NOT NULL
-      AND t.status = 'ACTIVE'
-      AND t."profileCompleteness" >= 70
-      AND 1 - (t.embedding <=> ${job.embedding}::vector) >= ${minSimilarity}
+    WHERE t.embedding IS NOT NULL
     ORDER BY similarity DESC
     LIMIT ${limit}
   `;
+  */
+
+  // 2. Basic filtering until vector search is available
+  const teachers = await prisma.teacherProfile.findMany({
+    where: {
+      status: 'ACTIVE',
+      profileCompleteness: { gte: 70 },
+      OR: [
+        { subjects: { has: job.subject } },
+        { preferredCountries: { has: job.country } },
+      ],
+      ...(job.minYearsExperience && {
+        yearsExperience: { gte: job.minYearsExperience }
+      }),
+      ...(job.salaryUSD && {
+        OR: [
+          { minSalaryUSD: null },
+          { minSalaryUSD: { lte: job.salaryUSD } }
+        ]
+      })
+    },
+    include: {
+      user: {
+        select: { email: true }
+      }
+    },
+    take: limit,
+    orderBy: { profileCompleteness: 'desc' }
+  });
+
+  const matches: TeacherMatch[] = teachers.map((t) => ({
+    id: t.id,
+    userId: t.userId,
+    firstName: t.firstName,
+    lastName: t.lastName,
+    email: t.user.email,
+    subjects: t.subjects,
+    yearsExperience: t.yearsExperience,
+    citizenship: t.citizenship,
+    preferredCountries: t.preferredCountries,
+    minSalaryUSD: t.minSalaryUSD || undefined,
+    videoAnalysis: t.videoAnalysis as VideoAnalysis | null,
+    visaStatus: t.visaStatus as VisaStatusCache | null,
+    similarity: 0.85, // Placeholder
+    distance: 0.15, // Placeholder
+  }));
 
   // 3. Cache results for future requests
   await cacheMatches(jobId, matches);
@@ -131,35 +157,64 @@ export async function findMatchingJobs(
   minSimilarity: number = 0.80,
   limit: number = 10
 ): Promise<JobMatch[]> {
+  // TODO: Enable when embedding field is added to schema
   const teacher = await prisma.teacherProfile.findUnique({
     where: { id: teacherId },
-    select: { embedding: true }
+    select: {
+      subjects: true,
+      preferredCountries: true,
+      minSalaryUSD: true,
+    }
   });
 
-  if (!teacher?.embedding) {
+  if (!teacher) {
+    throw new Error('Teacher not found');
+  }
+
+  /* TODO: Enable vector search when embedding field is added
+  if (!teacher.embedding) {
     throw new Error('Teacher embedding not generated');
   }
 
   const matches = await prisma.$queryRaw<JobMatch[]>`
-    SELECT
-      j.id,
-      j.title,
-      j."schoolName",
-      j.city,
-      j.country,
-      j."salaryUSD",
-      j.embedding <=> ${teacher.embedding}::vector AS distance,
-      1 - (j.embedding <=> ${teacher.embedding}::vector) AS similarity
+    SELECT ...
+    j.embedding <=> ${teacher.embedding}::vector AS distance
     FROM "JobPosting" j
-    WHERE
-      j.embedding IS NOT NULL
-      AND j.status = 'ACTIVE'
-      AND 1 - (j.embedding <=> ${teacher.embedding}::vector) >= ${minSimilarity}
+    WHERE j.embedding IS NOT NULL
     ORDER BY similarity DESC
     LIMIT ${limit}
   `;
+  */
 
-  return matches;
+  // Basic filtering until vector search is available
+  const jobs = await prisma.jobPosting.findMany({
+    where: {
+      status: 'ACTIVE',
+      OR: [
+        { subject: { in: teacher.subjects } },
+        { country: { in: teacher.preferredCountries } },
+      ],
+      ...(teacher.minSalaryUSD && {
+        salaryUSD: { gte: teacher.minSalaryUSD }
+      })
+    },
+    select: {
+      id: true,
+      title: true,
+      schoolName: true,
+      city: true,
+      country: true,
+      salaryUSD: true,
+    },
+    take: limit,
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return jobs.map(job => ({
+    ...job,
+    similarity: 0.80, // Placeholder
+    distance: 0.20, // Placeholder
+  }));
 }
 
 /**
@@ -183,9 +238,10 @@ export async function hybridTeacherSearch({
   minSimilarity?: number;
   limit?: number;
 }) {
-  let embedding: Prisma.JsonValue | null = null;
+  // TODO: Enable vector search when embedding field is added to schema
 
-  // Get job embedding if jobId provided
+  /* TODO: Get job embedding when field is available
+  let embedding: Prisma.JsonValue | null = null;
   if (jobId) {
     const job = await prisma.jobPosting.findUnique({
       where: { id: jobId },
@@ -193,79 +249,69 @@ export async function hybridTeacherSearch({
     });
     embedding = job?.embedding || null;
   }
+  */
 
-  // Build dynamic WHERE conditions
-  const conditions: string[] = [
-    't.status = \'ACTIVE\'',
-    't."profileCompleteness" >= 60'
-  ];
+  // Build WHERE conditions for basic filtering
+  const where: any = {
+    status: 'ACTIVE',
+    profileCompleteness: { gte: 60 }
+  };
 
-  if (embedding) {
-    conditions.push(`1 - (t.embedding <=> '${embedding}'::vector) >= ${minSimilarity}`);
-  }
+  const orConditions: any[] = [];
 
   if (subjects && subjects.length > 0) {
-    const subjectsList = subjects.map(s => `'${s}'`).join(',');
-    conditions.push(`t.subjects && ARRAY[${subjectsList}]::text[]`);
+    orConditions.push({ subjects: { hasSome: subjects } });
   }
 
   if (countries && countries.length > 0) {
-    const countriesList = countries.map(c => `'${c}'`).join(',');
-    conditions.push(`t."preferredCountries" && ARRAY[${countriesList}]::text[]`);
+    orConditions.push({ preferredCountries: { hasSome: countries } });
+  }
+
+  if (orConditions.length > 0) {
+    where.OR = orConditions;
   }
 
   if (minExperience) {
-    conditions.push(`t."yearsExperience" >= ${minExperience}`);
+    where.yearsExperience = { gte: minExperience };
   }
 
   if (maxSalary) {
-    conditions.push(`(t."minSalaryUSD" IS NULL OR t."minSalaryUSD" <= ${maxSalary})`);
+    where.OR = [
+      { minSalaryUSD: null },
+      { minSalaryUSD: { lte: maxSalary } }
+    ];
   }
 
-  const whereClause = conditions.join(' AND ');
+  const teachers = await prisma.teacherProfile.findMany({
+    where,
+    include: {
+      user: {
+        select: { email: true }
+      }
+    },
+    take: limit,
+    orderBy: [
+      { profileCompleteness: 'desc' },
+      { yearsExperience: 'desc' }
+    ]
+  });
 
-  const query = embedding
-    ? `
-      SELECT
-        t.id,
-        t."userId",
-        t."firstName",
-        t."lastName",
-        u.email,
-        t.subjects,
-        t."yearsExperience",
-        t.citizenship,
-        t."videoAnalysis",
-        t.embedding <=> '${embedding}'::vector AS distance,
-        1 - (t.embedding <=> '${embedding}'::vector) AS similarity
-      FROM "TeacherProfile" t
-      INNER JOIN "User" u ON u.id = t."userId"
-      WHERE ${whereClause}
-      ORDER BY similarity DESC
-      LIMIT ${limit}
-    `
-    : `
-      SELECT
-        t.id,
-        t."userId",
-        t."firstName",
-        t."lastName",
-        u.email,
-        t.subjects,
-        t."yearsExperience",
-        t.citizenship,
-        t."videoAnalysis",
-        0 AS distance,
-        1 AS similarity
-      FROM "TeacherProfile" t
-      INNER JOIN "User" u ON u.id = t."userId"
-      WHERE ${whereClause}
-      ORDER BY t."profileCompleteness" DESC, t."yearsExperience" DESC
-      LIMIT ${limit}
-    `;
-
-  const results = await prisma.$queryRawUnsafe(query);
-  return results as TeacherMatch[];
+  return teachers.map((t) => ({
+    id: t.id,
+    userId: t.userId,
+    firstName: t.firstName,
+    lastName: t.lastName,
+    email: t.user.email,
+    subjects: t.subjects,
+    yearsExperience: t.yearsExperience,
+    citizenship: t.citizenship,
+    preferredCountries: t.preferredCountries,
+    minSalaryUSD: t.minSalaryUSD || undefined,
+    videoAnalysis: t.videoAnalysis as VideoAnalysis | null,
+    visaStatus: t.visaStatus as VisaStatusCache | null,
+    similarity: 0.75, // Placeholder
+    distance: 0.25, // Placeholder
+  })) as TeacherMatch[];
 }
 
 export type SimilarTeacher = {
@@ -283,32 +329,58 @@ export async function findSimilarTeachers(
   teacherId: string,
   limit: number = 5
 ): Promise<SimilarTeacher[]> {
+  // TODO: Enable when embedding field is added to schema
   const teacher = await prisma.teacherProfile.findUnique({
     where: { id: teacherId },
-    select: { embedding: true }
+    select: {
+      subjects: true,
+      preferredCountries: true,
+    }
   });
 
-  if (!teacher?.embedding) {
+  if (!teacher) {
+    return [];
+  }
+
+  /* TODO: Enable vector search when embedding field is added
+  if (!teacher.embedding) {
     return [];
   }
 
   const similar = await prisma.$queryRaw<SimilarTeacher[]>`
-    SELECT
-      t.id,
-      t."firstName",
-      t."lastName",
-      t.subjects,
-      1 - (t.embedding <=> ${teacher.embedding}::vector) AS similarity
+    SELECT ...
+    1 - (t.embedding <=> ${teacher.embedding}::vector) AS similarity
     FROM "TeacherProfile" t
-    WHERE
-      t.embedding IS NOT NULL
-      AND t.id != ${teacherId}
-      AND t.status = 'ACTIVE'
+    WHERE t.embedding IS NOT NULL
     ORDER BY similarity DESC
     LIMIT ${limit}
   `;
+  */
 
-  return similar;
+  // Basic filtering until vector search is available
+  const similar = await prisma.teacherProfile.findMany({
+    where: {
+      status: 'ACTIVE',
+      id: { not: teacherId },
+      OR: [
+        { subjects: { hasSome: teacher.subjects } },
+        { preferredCountries: { hasSome: teacher.preferredCountries } },
+      ]
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      subjects: true,
+    },
+    take: limit,
+    orderBy: { profileCompleteness: 'desc' }
+  });
+
+  return similar.map(t => ({
+    ...t,
+    similarity: 0.75, // Placeholder
+  }));
 }
 
 /**
@@ -316,9 +388,10 @@ export async function findSimilarTeachers(
  * Run periodically to optimize search performance
  */
 export async function rebuildVectorIndex() {
-  // This would be run as a maintenance script
-  // pgvector automatically maintains indexes, but can be optimized
+  // TODO: Enable when embedding field and indexes are added
+  console.log('Vector indexes not yet implemented - embedding field not in schema');
 
+  /* TODO: Uncomment when embedding indexes are created
   await prisma.$executeRaw`
     REINDEX INDEX CONCURRENTLY idx_teacher_embedding;
   `;
@@ -328,4 +401,5 @@ export async function rebuildVectorIndex() {
   `;
 
   console.log('Vector indexes rebuilt successfully');
+  */
 }
