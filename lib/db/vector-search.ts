@@ -18,7 +18,7 @@ export type TeacherMatch = {
   email: string;
   subjects: string[];
   yearsExperience: number;
-  citizenship: string;
+  citizenship: string | null;
   preferredCountries: string[];
   minSalaryUSD?: number;
   videoAnalysis: VideoAnalysis | null;
