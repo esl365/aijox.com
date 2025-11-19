@@ -5,7 +5,7 @@
  * Prevents runtime errors in production
  */
 
-import { prisma } from './prisma'
+import { prisma } from '@/lib/prisma'
 
 /**
  * Check if pgvector extension is installed and working
