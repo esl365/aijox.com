@@ -1,0 +1,477 @@
+// Global Educator Nexus - Database Schema
+// AI-Powered International School Recruitment Platform
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  ADMIN      // Platform administrator
+  TEACHER    // Job seeker (educator)
+  SCHOOL     // Direct school hiring
+  RECRUITER  // Third-party recruiter
+}
+
+enum AppStatus {
+  NEW        // Just applied
+  SCREENING  // Under review
+  INTERVIEW  // Interview scheduled
+  OFFER      // Offer made
+  HIRED      // Hired successfully
+  REJECTED   // Application rejected
+}
+
+enum DegreeLevel {
+  HIGH_SCHOOL
+  ASSOCIATE
+  BACHELOR
+  MASTER
+  DOCTORATE
+}
+
+enum VisaType {
+  E2_KOREA      // Korea E2 Visa
+  Z_CHINA       // China Z Visa
+  WORK_PERMIT   // Generic work permit
+  SPONSORSHIP   // Employer sponsorship
+  NOT_REQUIRED  // No visa needed
+}
+
+// ============================================================================
+// USER & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  role          UserRole  @default(TEACHER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts        Account[]
+  sessions        Session[]
+  teacherProfile  TeacherProfile?
+  schoolProfile   SchoolProfile?
+  recruiterProfile RecruiterProfile?
+  jobPostings     JobPosting[]
+  notifications   Notification[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// Auth.js v5 Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================================
+// TEACHER PROFILE (The Asset)
+// ============================================================================
+
+model TeacherProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic Info
+  firstName       String
+  lastName        String
+  phone           String?
+  country         String // Country of citizenship
+  city            String?
+  dateOfBirth     DateTime?
+  gender          String?
+
+  // Professional Info
+  degree          DegreeLevel
+  major           String?
+  university      String?
+  yearsExperience Int         @default(0)
+  subjects        String[] // Array of subjects they can teach
+  certifications  String[] // TEFL, CELTA, etc.
+
+  // Preferences
+  preferredCountries String[] // Countries willing to work in
+  preferredCities    String[]
+  minSalaryUSD       Int? // Minimum acceptable salary in USD
+  housingRequired    Boolean  @default(false)
+  flightRequired     Boolean  @default(false)
+
+  // Media
+  resumeUrl    String? // Traditional resume (PDF)
+  videoResumeUrl String? // Video introduction (R2 URL)
+  photoUrl     String? // Profile photo
+
+  // AI Analysis Results (JSONB for flexibility)
+  videoAnalysis Json? // { accent_type, clarity_score, energy_level, appearance_check, summary }
+  visaStatus    Json? // { kr: { eligible: true/false, reason: "..." }, cn: {...}, ... }
+
+  // Vector Embedding (1536 dimensions for text-embedding-3-small)
+  // Used for RAG-based job matching
+  embedding Unsupported("vector(1536)")?
+
+  // Criminal Background Check
+  criminalRecordClean Boolean @default(false)
+  backgroundCheckDate DateTime?
+
+  // Profile Status
+  profileComplete Boolean  @default(false)
+  completionScore Int      @default(0) // 0-100 for gamification
+  isActive        Boolean  @default(true)
+  isPublic        Boolean  @default(true) // Visible to recruiters
+
+  // Metadata
+  lastActive DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  applications Application[]
+  savedJobs    SavedJob[]
+
+  @@index([country])
+  @@index([preferredCountries])
+  @@index([subjects])
+  @@index([minSalaryUSD])
+  @@index([profileComplete])
+  @@index([isActive])
+}
+
+// ============================================================================
+// SCHOOL & RECRUITER PROFILES
+// ============================================================================
+
+model SchoolProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  schoolName  String
+  country     String
+  city        String
+  address     String?
+  website     String?
+  description String? @db.Text
+  logoUrl     String?
+
+  // School Type
+  curriculum String[] // IB, AP, British, American, etc.
+  grades     String[] // K-12, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([country])
+  @@index([city])
+}
+
+model RecruiterProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyName String
+  website     String?
+  description String? @db.Text
+  logoUrl     String?
+
+  // Credits for "Reveal Contact" feature
+  credits Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// JOB POSTINGS (The Bait)
+// ============================================================================
+
+model JobPosting {
+  id String @id @default(cuid())
+
+  // Organization Info (with anonymity support)
+  organizationName String
+  isAnonymous      Boolean @default(false)
+  hiddenOrgName    String? // Admin only - real name when anonymous
+
+  // Location
+  country String
+  city    String
+  address String?
+
+  // Position Details
+  title           String
+  subject         String // Math, English, Science, etc.
+  grades          String[] // Grade levels to teach
+  positionType    String   @default("Full-time") // Full-time, Part-time, Contract
+  startDate       DateTime?
+  contractLength  Int? // In months
+
+  // Requirements
+  requiredDegree      DegreeLevel
+  requiredExperience  Int         @default(0) // Minimum years
+  requiredCerts       String[] // Required certifications
+  visaType            VisaType
+  visaSponsored       Boolean     @default(false)
+
+  // Compensation (normalized to USD)
+  salaryUSD        Int // Monthly salary converted to USD
+  salaryCurrency   String  @default("USD")
+  salaryOriginal   Float? // Original amount before conversion
+
+  // Benefits
+  housingProvided  Boolean @default(false)
+  flightProvided   Boolean @default(false)
+  healthInsurance  Boolean @default(false)
+  otherBenefits    String?
+
+  // Job Description
+  description      String  @db.Text
+  responsibilities String? @db.Text
+  qualifications   String? @db.Text
+
+  // Status
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  expiresAt   DateTime?
+
+  // SEO & Analytics
+  slug        String   @unique // URL-friendly slug
+  views       Int      @default(0)
+  clickCount  Int      @default(0)
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+
+  // Relations
+  applications Application[]
+  savedJobs    SavedJob[]
+
+  @@index([country])
+  @@index([city])
+  @@index([subject])
+  @@index([salaryUSD])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([slug])
+}
+
+// ============================================================================
+// APPLICATION (The Funnel)
+// ============================================================================
+
+model Application {
+  id String @id @default(cuid())
+
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String
+
+  job   JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId String
+
+  // Application Status (ATS)
+  funnelStatus AppStatus @default(NEW)
+
+  // AI Matching Score (calculated at application time)
+  aiMatchScore Int? // 0-100
+
+  // Cover Letter & Resume
+  coverLetter String? @db.Text // AI-generated or manual
+  resumeUrl   String? // Snapshot of resume at application time
+
+  // Tracking
+  appliedAt  DateTime  @default(now())
+  viewedAt   DateTime? // When recruiter first viewed
+  viewedBy   String? // Recruiter who viewed
+
+  // Interview
+  interviewScheduledAt DateTime?
+  interviewNotes       String?   @db.Text
+
+  // Rejection
+  rejectedAt   DateTime?
+  rejectReason String? // "Visa Issue", "Underqualified", etc. (MARKET DATA)
+
+  // Offer
+  offerMadeAt       DateTime?
+  offerSalaryUSD    Int?
+  offerAcceptedAt   DateTime?
+  offerRejectedAt   DateTime?
+
+  // Hired
+  hiredAt   DateTime?
+  startDate DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([teacherId, jobId]) // Prevent duplicate applications
+  @@index([teacherId])
+  @@index([jobId])
+  @@index([funnelStatus])
+  @@index([aiMatchScore])
+  @@index([appliedAt])
+}
+
+// ============================================================================
+// SAVED JOBS (Bookmarking)
+// ============================================================================
+
+model SavedJob {
+  id String @id @default(cuid())
+
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String
+
+  job   JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId String
+
+  savedAt DateTime @default(now())
+
+  @@unique([teacherId, jobId])
+  @@index([teacherId])
+  @@index([jobId])
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  type    String // "NEW_JOB_MATCH", "APPLICATION_STATUS", "MESSAGE", etc.
+  title   String
+  message String @db.Text
+  link    String? // URL to related content
+
+  isRead Boolean  @default(false)
+  sentAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([sentAt])
+}
+
+// ============================================================================
+// ANALYTICS & SEO DATA
+// ============================================================================
+
+model SearchMetric {
+  id String @id @default(cuid())
+
+  // What was searched
+  query   String
+  filters Json? // { country: "korea", subject: "math", ... }
+
+  // Results
+  resultsCount Int
+  clickedJobId String?
+
+  // User context
+  userId    String?
+  ipAddress String?
+  userAgent String?
+
+  searchedAt DateTime @default(now())
+
+  @@index([query])
+  @@index([searchedAt])
+}
+
+model PageView {
+  id String @id @default(cuid())
+
+  path      String
+  referrer  String?
+  ipAddress String?
+  userAgent String?
+  userId    String?
+
+  viewedAt DateTime @default(now())
+
+  @@index([path])
+  @@index([viewedAt])
+}
+
+// ============================================================================
+// GEO DATA (for SEO/AEO)
+// ============================================================================
+
+model GeoData {
+  id String @id @default(cuid())
+
+  country String @unique
+
+  // Aggregated statistics
+  avgSalaryUSD      Int
+  totalJobs         Int      @default(0)
+  totalTeachers     Int      @default(0)
+  housingProvidedPct Float   @default(0)
+  visaTypes          String[] // Common visa types
+  topCities          String[] // Top hiring cities
+  topSubjects        String[] // In-demand subjects
+
+  // For LLM consumption
+  summary String? @db.Text // AI-friendly description
+
+  updatedAt DateTime @updatedAt
+
+  @@index([country])
+}
