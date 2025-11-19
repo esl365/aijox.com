@@ -28,7 +28,7 @@ export function ProfileCompletionBanner({
   // Determine urgency based on completion score
   const getUrgencyLevel = () => {
     if (completionScore < 40) return { level: 'critical', color: 'destructive' as const };
-    if (completionScore < 70) return { level: 'warning', color: 'warning' as const };
+    if (completionScore < 70) return { level: 'warning', color: 'default' as const };
     return { level: 'info', color: 'default' as const };
   };
 
