@@ -14,6 +14,8 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { analyzeVideoWithRetry, generateUserFeedback, calculateProfileCompleteness } from '@/lib/ai/video-analyzer';
 import { notifyTeacherVideoAnalyzed } from '@/lib/email/notifications';
+import { videoAnalysisRateLimit, checkRateLimit } from '@/lib/rate-limit';
+import { getSearchRank } from '@/lib/config/scoring';
 
 export type AnalysisResult = {
   success: boolean;
@@ -89,12 +91,12 @@ export async function analyzeTeacherVideo(profileId: string): Promise<AnalysisRe
     const updated = await prisma.teacherProfile.update({
       where: { id: profileId },
       data: {
-        videoAnalysis: analysis as any, // JSONB field
+        videoAnalysis: analysis,
         videoAnalysisStatus: 'COMPLETED',
         lastAnalyzedAt: new Date(),
         profileCompleteness: completeness,
-        // Update search ranking based on video quality
-        searchRank: analysis.overall_score >= 75 ? 'HIGH' : analysis.overall_score >= 60 ? 'MEDIUM' : 'LOW'
+        // Update search ranking based on video quality (uses SCORING_CONFIG)
+        searchRank: getSearchRank(analysis.overall_score)
       }
     });
 
@@ -147,6 +149,8 @@ export async function analyzeTeacherVideo(profileId: string): Promise<AnalysisRe
 /**
  * Manual re-analysis trigger
  * Allows teachers to request new analysis (e.g., after re-uploading)
+ *
+ * Rate Limiting: 5 requests per hour (Refinement.md:430)
  */
 export async function requestVideoReanalysis(): Promise<AnalysisResult> {
   const session = await auth();
@@ -156,6 +160,21 @@ export async function requestVideoReanalysis(): Promise<AnalysisResult> {
       success: false,
       error: 'Unauthorized',
       message: 'Please sign in to continue.'
+    };
+  }
+
+  // Rate limiting: 5 requests per hour per user
+  const rateLimitResult = await checkRateLimit(
+    videoAnalysisRateLimit,
+    session.user.id,
+    'video-analysis'
+  );
+
+  if (!rateLimitResult.success) {
+    return {
+      success: false,
+      error: 'Rate limited',
+      message: rateLimitResult.error
     };
   }
 
@@ -171,20 +190,6 @@ export async function requestVideoReanalysis(): Promise<AnalysisResult> {
       error: 'Profile not found',
       message: 'Teacher profile does not exist.'
     };
-  }
-
-  // Rate limiting: Only allow re-analysis once per hour
-  if (profile.lastAnalyzedAt) {
-    const hoursSinceLastAnalysis =
-      (Date.now() - profile.lastAnalyzedAt.getTime()) / (1000 * 60 * 60);
-
-    if (hoursSinceLastAnalysis < 1) {
-      return {
-        success: false,
-        error: 'Rate limited',
-        message: 'Please wait at least 1 hour between re-analyses.'
-      };
-    }
   }
 
   // Trigger analysis

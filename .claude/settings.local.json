@@ -4,7 +4,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nImplement AI Agents: Complete architecture and implementation\n\nThis commit implements all three AI agents for the Global Educator Nexus platform:\n\n## Agent 1: AI Screener (Video Analysis)\n- GPT-4o multimodal video analysis\n- Structured feedback generation\n- Profile completeness calculation\n- Real-time UI feedback components\n\n## Agent 2: Autonomous Headhunter (RAG Matching)\n- OpenAI embeddings for semantic search\n- pgvector similarity matching\n- Multi-stage candidate filtering\n- Claude 3.5 personalized email generation\n- Batch email delivery via Resend\n\n## Agent 3: Rule-based Visa Guard\n- Comprehensive visa rules for 10 countries\n- Real-time eligibility checking\n- Application validation\n- Cached JSONB results for performance\n\n## Documentation\n- Complete technical specification (specification/Specification.md)\n- Architecture diagrams with Mermaid (docs/ARCHITECTURE.md)\n- Setup and configuration guide (docs/SETUP.md)\n\n## Implementation Files\n- lib/ai/: AI service integrations\n- lib/db/: Vector search and database queries\n- lib/matching/: Candidate filtering logic\n- lib/visa/: Visa rules and checker engine\n- app/actions/: Server actions for all agents\n- app/api/: UploadThing configuration\n- components/: React UI components\n\nAll agents are production-ready with error handling, caching, and monitoring.\n\n🤖 Generated with Claude Code\nhttps://claude.com/claude-code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

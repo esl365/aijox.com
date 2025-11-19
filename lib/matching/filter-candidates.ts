@@ -6,6 +6,10 @@
 
 import type { TeacherMatch } from '@/lib/db/vector-search';
 import type { JobPosting } from '@prisma/client';
+import type { VisaCheckResult } from '@/lib/visa/checker';
+import { SCORING_CONFIG, getMatchQuality as getMatchQualityHelper } from '@/lib/config/scoring';
+
+export type VisaStatusCache = Record<string, VisaCheckResult>;
 
 export type FilteredCandidate = TeacherMatch & {
   matchReasons: string[];
@@ -128,7 +132,7 @@ export function applyFilters(
  * Check visa eligibility from cached visaStatus JSON
  */
 function checkVisaEligibility(
-  visaStatus: any,
+  visaStatus: VisaStatusCache | null | undefined,
   country: string
 ): { eligible: boolean; reason?: string } {
   if (!visaStatus || typeof visaStatus !== 'object') {
@@ -144,7 +148,7 @@ function checkVisaEligibility(
 
   return {
     eligible: countryStatus.eligible === true,
-    reason: countryStatus.failedRequirements?.[0] || 'Visa requirements not met'
+    reason: countryStatus.failedRequirements?.[0]?.message || 'Visa requirements not met'
   };
 }
 
@@ -215,6 +219,7 @@ function checkSalaryExpectations(
 
 /**
  * Calculate overall recommendation score (0-100)
+ * Uses weights from SCORING_CONFIG (lib/config/scoring.ts)
  */
 function calculateRecommendationScore(
   similarity: number, // 0-1 from vector search
@@ -224,14 +229,8 @@ function calculateRecommendationScore(
   teacherExperience: number,
   requiredExperience: number
 ): number {
-  // Weighted scoring
-  const weights = {
-    similarity: 0.40, // Vector similarity is most important
-    subject: 0.20,
-    salary: 0.15,
-    video: 0.15,
-    experience: 0.10
-  };
+  // Weighted scoring from config
+  const weights = SCORING_CONFIG.MATCHING.WEIGHTS;
 
   // Normalize video score to 0-1
   const normalizedVideo = videoScore / 100;
@@ -240,23 +239,21 @@ function calculateRecommendationScore(
   const experienceBonus = Math.min((teacherExperience - requiredExperience) / 5, 1);
 
   const score =
-    (similarity * weights.similarity) +
-    (subjectMatch * weights.subject) +
-    (salaryAttractiveness * weights.salary) +
-    (normalizedVideo * weights.video) +
-    (Math.max(experienceBonus, 0) * weights.experience);
+    (similarity * weights.SIMILARITY) +
+    (subjectMatch * weights.SUBJECT) +
+    (salaryAttractiveness * weights.SALARY) +
+    (normalizedVideo * weights.VIDEO) +
+    (Math.max(experienceBonus, 0) * weights.EXPERIENCE);
 
   return Math.round(score * 100);
 }
 
 /**
  * Categorize match quality
+ * Uses thresholds from SCORING_CONFIG (lib/config/scoring.ts)
  */
 function getMatchQuality(score: number): 'EXCELLENT' | 'GREAT' | 'GOOD' | 'FAIR' {
-  if (score >= 85) return 'EXCELLENT';
-  if (score >= 75) return 'GREAT';
-  if (score >= 65) return 'GOOD';
-  return 'FAIR';
+  return getMatchQualityHelper(score);
 }
 
 /**

@@ -6,8 +6,10 @@
  */
 
 import { generateObject } from 'ai';
+import type { CoreMessage } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
+import { SCORING_CONFIG } from '@/lib/config/scoring';
 
 // Zod schema for type-safe AI responses
 export const VideoAnalysisSchema = z.object({
@@ -115,31 +117,33 @@ export async function analyzeVideo(videoUrl: string): Promise<VideoAnalysis> {
               type: 'video',
               videoUrl: videoUrl
             }
-          ] as any // Type assertion for video content type
-        }
+          ]
+        } as CoreMessage
       ],
       temperature: 0.3, // Low temperature for consistency across analyses
       maxTokens: 1500,
     });
 
     return result.object;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Video analysis failed:', error);
 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     // Handle specific error types
-    if (error.message?.includes('rate_limit')) {
+    if (errorMessage.includes('rate_limit')) {
       throw new Error('AI service rate limit exceeded. Please try again in a few minutes.');
     }
 
-    if (error.message?.includes('invalid_video')) {
+    if (errorMessage.includes('invalid_video')) {
       throw new Error('Video format not supported or file corrupted.');
     }
 
-    if (error.message?.includes('timeout')) {
+    if (errorMessage.includes('timeout')) {
       throw new Error('Video analysis timed out. Video may be too long (max 5 minutes).');
     }
 
-    throw new Error(`Video analysis failed: ${error.message}`);
+    throw new Error(`Video analysis failed: ${errorMessage}`);
   }
 }
 
@@ -180,8 +184,8 @@ export function generateUserFeedback(analysis: VideoAnalysis): {
     tips.push('⚡ Energy: Show enthusiasm! Smile, use hand gestures, and vary your vocal tone.');
   }
 
-  // Overall recommendation
-  if (analysis.overall_score < 60) {
+  // Overall recommendation (uses SCORING_CONFIG from lib/config/scoring.ts)
+  if (analysis.overall_score < SCORING_CONFIG.VIDEO_ANALYSIS.MIN_ACCEPTABLE_SCORE) {
     shouldRerecord = true;
     return {
       message: `Your video scored ${analysis.overall_score}/100. We recommend re-recording to improve your chances with schools.`,
@@ -190,7 +194,7 @@ export function generateUserFeedback(analysis: VideoAnalysis): {
     };
   }
 
-  if (analysis.overall_score < 75) {
+  if (analysis.overall_score < SCORING_CONFIG.VIDEO_ANALYSIS.GOOD_SCORE_THRESHOLD) {
     return {
       message: `Good start! Your video scored ${analysis.overall_score}/100. Consider these improvements:`,
       tips,

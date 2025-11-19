@@ -13,6 +13,8 @@ import { auth } from '@/lib/auth';
 import { findMatchingTeachers } from '@/lib/db/vector-search';
 import { applyFilters, deduplicateMatches } from '@/lib/matching/filter-candidates';
 import { generateBatchEmails } from '@/lib/ai/email-generator';
+import { jobMatchingRateLimit, checkRateLimit } from '@/lib/rate-limit';
+import { SCORING_CONFIG } from '@/lib/config/scoring';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -31,6 +33,8 @@ export type MatchingResult = {
 /**
  * Main entry point: Find and notify matching teachers for a new job
  * Triggered automatically when a job is posted
+ *
+ * Rate Limiting: 20 requests per hour per recruiter (Refinement.md:416)
  */
 export async function notifyMatchedTeachers(
   jobId: string,
@@ -41,9 +45,35 @@ export async function notifyMatchedTeachers(
   } = {}
 ): Promise<MatchingResult> {
   try {
+    // 0. Check authentication and rate limit
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: 'Unauthorized',
+        message: 'Please sign in to continue.'
+      };
+    }
+
+    // Rate limiting: 20 requests per hour per recruiter
+    const rateLimitResult = await checkRateLimit(
+      jobMatchingRateLimit,
+      session.user.id,
+      'job-matching'
+    );
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: 'Rate limited',
+        message: rateLimitResult.error
+      };
+    }
+
     const {
-      minSimilarity = 0.85,
-      maxCandidates = 20,
+      minSimilarity = SCORING_CONFIG.MATCHING.DEFAULT_MIN_SIMILARITY,
+      maxCandidates = SCORING_CONFIG.MATCHING.DEFAULT_MAX_CANDIDATES,
       sendImmediately = true
     } = options;
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { recruiterSetupRateLimit, checkRateLimit } from '@/lib/rate-limit';
 
 const recruiterSetupSchema = z.object({
   userId: z.string(),
@@ -22,6 +23,24 @@ export async function POST(request: NextRequest) {
 
     if (session.user.role !== 'RECRUITER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Rate limiting: 5 requests per hour to prevent spam (Refinement.md:416)
+    const rateLimitResult = await checkRateLimit(
+      recruiterSetupRateLimit,
+      session.user.id,
+      'recruiter-setup'
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: rateLimitResult.error,
+          retryAfter: rateLimitResult.retryAfter
+        },
+        { status: 429 }
+      );
     }
 
     const body = await request.json();

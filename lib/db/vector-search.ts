@@ -6,6 +6,8 @@
 
 import { prisma } from '@/lib/db';
 import type { Prisma } from '@prisma/client';
+import type { VideoAnalysis } from '@/lib/ai/video-analyzer';
+import type { VisaStatusCache } from '@/lib/matching/filter-candidates';
 
 export type TeacherMatch = {
   id: string;
@@ -18,8 +20,8 @@ export type TeacherMatch = {
   citizenship: string;
   preferredCountries: string[];
   minSalaryUSD?: number;
-  videoAnalysis: any;
-  visaStatus: any;
+  videoAnalysis: VideoAnalysis | null;
+  visaStatus: VisaStatusCache | null;
   similarity: number;
   distance: number;
 };
@@ -99,11 +101,7 @@ export async function findMatchingTeachers(
  * @param minSimilarity - Minimum cosine similarity
  * @param limit - Maximum results
  */
-export async function findMatchingJobs(
-  teacherId: string,
-  minSimilarity: number = 0.80,
-  limit: number = 10
-): Promise<Array<{
+export type JobMatch = {
   id: string;
   title: string;
   schoolName: string;
@@ -112,7 +110,13 @@ export async function findMatchingJobs(
   salaryUSD: number;
   similarity: number;
   distance: number;
-}>> {
+};
+
+export async function findMatchingJobs(
+  teacherId: string,
+  minSimilarity: number = 0.80,
+  limit: number = 10
+): Promise<JobMatch[]> {
   const teacher = await prisma.teacherProfile.findUnique({
     where: { id: teacherId },
     select: { embedding: true }
@@ -122,7 +126,7 @@ export async function findMatchingJobs(
     throw new Error('Teacher embedding not generated');
   }
 
-  const matches = await prisma.$queryRaw`
+  const matches = await prisma.$queryRaw<JobMatch[]>`
     SELECT
       j.id,
       j.title,
@@ -141,7 +145,7 @@ export async function findMatchingJobs(
     LIMIT ${limit}
   `;
 
-  return matches as any;
+  return matches;
 }
 
 /**
@@ -165,7 +169,7 @@ export async function hybridTeacherSearch({
   minSimilarity?: number;
   limit?: number;
 }) {
-  let embedding: any = null;
+  let embedding: Prisma.JsonValue | null = null;
 
   // Get job embedding if jobId provided
   if (jobId) {
@@ -173,7 +177,7 @@ export async function hybridTeacherSearch({
       where: { id: jobId },
       select: { embedding: true }
     });
-    embedding = job?.embedding;
+    embedding = job?.embedding || null;
   }
 
   // Build dynamic WHERE conditions
@@ -250,19 +254,21 @@ export async function hybridTeacherSearch({
   return results as TeacherMatch[];
 }
 
+export type SimilarTeacher = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  subjects: string[];
+  similarity: number;
+};
+
 /**
  * Get similar teachers (for "Teachers like you" feature)
  */
 export async function findSimilarTeachers(
   teacherId: string,
   limit: number = 5
-): Promise<Array<{
-  id: string;
-  firstName: string;
-  lastName: string;
-  subjects: string[];
-  similarity: number;
-}>> {
+): Promise<SimilarTeacher[]> {
   const teacher = await prisma.teacherProfile.findUnique({
     where: { id: teacherId },
     select: { embedding: true }
@@ -272,7 +278,7 @@ export async function findSimilarTeachers(
     return [];
   }
 
-  const similar = await prisma.$queryRaw`
+  const similar = await prisma.$queryRaw<SimilarTeacher[]>`
     SELECT
       t.id,
       t."firstName",
@@ -288,7 +294,7 @@ export async function findSimilarTeachers(
     LIMIT ${limit}
   `;
 
-  return similar as any;
+  return similar;
 }
 
 /**
