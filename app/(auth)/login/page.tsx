@@ -18,7 +18,14 @@ export default async function LoginPage({
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
   const params = await searchParams;
-  const session = await auth();
+
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error('Auth error in login page:', error);
+    // Continue to show login form if auth fails
+  }
 
   if (session?.user) {
     if (!session.user.role) {

@@ -18,7 +18,14 @@ export default async function SignupPage({
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
   const params = await searchParams;
-  const session = await auth();
+
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error('Auth error in signup page:', error);
+    // Continue to show signup form if auth fails
+  }
 
   // Redirect if already logged in
   if (session?.user) {

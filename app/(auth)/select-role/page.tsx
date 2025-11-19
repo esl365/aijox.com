@@ -13,7 +13,14 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function SelectRolePage() {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error('Auth error in select-role page:', error);
+    // Redirect to login if auth fails
+    redirect('/login');
+  }
 
   // Redirect if not logged in
   if (!session?.user) {
