@@ -23,6 +23,29 @@ export default async function SchoolDashboardPage() {
     redirect('/dashboard');
   }
 
+  // Auto-create school profile if it doesn't exist (for seeded users)
+  if (session.user.role === 'SCHOOL') {
+    const { prisma } = await import('@/lib/db');
+    const existingProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!existingProfile) {
+      // Create a basic profile for seeded school users
+      await prisma.schoolProfile.create({
+        data: {
+          userId: session.user.id,
+          schoolName: session.user.name || 'School',
+          country: 'South Korea',
+          city: 'Seoul',
+          schoolType: 'International School',
+          isVerified: true,
+          verifiedAt: new Date(),
+        },
+      });
+    }
+  }
+
   const stats = {
     activeJobs: 8,
     totalApplications: 156,
