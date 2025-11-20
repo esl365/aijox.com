@@ -72,13 +72,14 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       }
 
       if (result?.ok) {
-        console.log('Sign in successful, waiting for session to propagate...');
-        // Wait a bit for session cookie to be fully set in browser
-        // before redirecting to ensure middleware can read it
+        console.log('Sign in successful, reloading page...');
+        // Instead of redirecting to dashboard, reload the page
+        // Middleware will see the session and redirect to dashboard automatically
+        // This ensures cookies are properly included in the request
         setTimeout(() => {
-          console.log('Redirecting to dashboard now...');
-          window.location.href = callbackUrl || '/school/dashboard';
-        }, 500); // 500ms delay to ensure cookie propagation
+          console.log('Reloading now...');
+          window.location.reload();
+        }, 300);
       } else {
         console.error('Unexpected result:', result);
         setError('Something went wrong');
