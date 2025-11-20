@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { RoleSelector } from '@/components/auth/role-selector';
-import { getSetupUrl } from '@/lib/utils/routing';
+import { getSetupUrl, getDashboardUrl } from '@/lib/utils/routing';
 
 export default function SelectRolePageClient() {
   const router = useRouter();
@@ -22,9 +22,9 @@ export default function SelectRolePageClient() {
     // Redirect if role already set
     if (session.user.role) {
       if (session.user.hasProfile) {
-        router.push('/dashboard');
+        router.push(getDashboardUrl(session.user.role));
       } else {
-        router.push(getSetupUrl(session.user.role, 'dashboard'));
+        router.push(getSetupUrl(session.user.role, 'select-role'));
       }
     }
   }, [session, status, router]);

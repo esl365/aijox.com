@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { TeacherProfileForm } from '@/components/teacher/teacher-profile-form';
 import type { TeacherProfileFormData } from '@/lib/validations/teacher-profile';
 import { useEffect, useState } from 'react';
+import { getDashboardUrl } from '@/lib/utils/routing';
 
 export default function TeacherSetupClient() {
   const router = useRouter();
@@ -22,13 +23,13 @@ export default function TeacherSetupClient() {
 
     // Redirect if not a teacher
     if (session.user.role !== 'TEACHER') {
-      router.push('/dashboard');
+      router.push(getDashboardUrl(session.user.role));
       return;
     }
 
     // Redirect if profile already completed
     if (session.user.hasProfile) {
-      router.push('/dashboard');
+      router.push(getDashboardUrl('TEACHER'));
       return;
     }
 
@@ -47,7 +48,7 @@ export default function TeacherSetupClient() {
         throw new Error('Failed to save profile');
       }
 
-      router.push('/dashboard');
+      router.push(getDashboardUrl('TEACHER'));
       router.refresh();
     } catch (error) {
       console.error('Error saving profile:', error);

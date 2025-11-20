@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { getDashboardUrl } from '@/lib/utils/routing';
 
 const recruiterSetupSchema = z.object({
   companyName: z.string().min(2, 'Company name must be at least 2 characters'),
@@ -29,6 +31,7 @@ interface RecruiterSetupFormProps {
 
 export function RecruiterSetupForm({ userId }: RecruiterSetupFormProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +59,8 @@ export function RecruiterSetupForm({ userId }: RecruiterSetupFormProps) {
         throw new Error(errorData.error || 'Failed to save profile');
       }
 
-      router.push('/dashboard');
+      const userRole = session?.user?.role || 'RECRUITER';
+      router.push(getDashboardUrl(userRole));
       router.refresh();
     } catch (err: any) {
       console.error('Failed to save recruiter profile:', err);
@@ -165,7 +169,10 @@ export function RecruiterSetupForm({ userId }: RecruiterSetupFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => {
+                const userRole = session?.user?.role || 'RECRUITER';
+                router.push(getDashboardUrl(userRole));
+              }}
               disabled={isLoading}
             >
               Skip for now

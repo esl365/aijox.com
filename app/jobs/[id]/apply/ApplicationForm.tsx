@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { submitApplication } from '@/app/actions/applications';
 import { useToast } from '@/hooks/use-toast';
+import { getDashboardUrl } from '@/lib/utils/routing';
 
 type ApplicationFormProps = {
   job: JobPosting;
@@ -37,7 +38,7 @@ export function ApplicationForm({ job, validation }: ApplicationFormProps) {
         title: 'Application Submitted',
         description: result.message,
       });
-      router.push('/dashboard');
+      router.push(getDashboardUrl('TEACHER'));
     } else {
       toast({
         title: 'Submission Failed',
