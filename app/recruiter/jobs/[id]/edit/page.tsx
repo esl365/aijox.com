@@ -17,16 +17,17 @@ export const metadata: Metadata = {
 };
 
 interface EditJobPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditJobPage({ params }: EditJobPageProps) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user) {
-    redirect('/login?callbackUrl=/recruiter/jobs/' + params.id + '/edit');
+    redirect('/login?callbackUrl=/recruiter/jobs/' + id + '/edit');
   }
 
   if (session.user.role !== 'RECRUITER' && session.user.role !== 'ADMIN') {
@@ -35,7 +36,7 @@ export default async function EditJobPage({ params }: EditJobPageProps) {
 
   // Mock job data - in production this would come from database
   const job = {
-    id: params.id,
+    id: id,
     title: 'ESL Teacher',
     type: 'FULL_TIME',
     subject: 'ENGLISH',
