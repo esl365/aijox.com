@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LogoutButton } from '@/components/ui/logout-button';
 import { Users, Briefcase, Building2, FileText, TrendingUp, AlertTriangle } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -32,9 +33,12 @@ export default async function AdminDashboardPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Platform overview and statistics</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Platform overview and statistics</p>
+          </div>
+          <LogoutButton />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">

@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LogoutButton } from '@/components/ui/logout-button';
 import { Briefcase, Users, Eye, MessageSquare, TrendingUp, Plus } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -93,12 +94,15 @@ export default async function RecruiterDashboardPage() {
             <h1 className="text-4xl font-bold mb-2">Recruiter Dashboard</h1>
             <p className="text-muted-foreground">Manage your job postings and track applications</p>
           </div>
-          <Link href="/recruiter/jobs/create">
-            <Button size="lg" className="gap-2">
-              <Plus className="h-5 w-5" />
-              Post New Job
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/recruiter/jobs/create">
+              <Button size="lg" className="gap-2">
+                <Plus className="h-5 w-5" />
+                Post New Job
+              </Button>
+            </Link>
+            <LogoutButton />
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
