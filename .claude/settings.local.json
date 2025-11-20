@@ -21,7 +21,13 @@
       "Bash(npm run build:*)",
       "Bash(openssl rand:*)",
       "Bash(curl:*)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm run db:create-admin:*)",
+      "mcp__plugin_neon-plugin_neon__list_projects",
+      "mcp__plugin_neon-plugin_neon__run_sql",
+      "mcp__plugin_neon-plugin_neon__describe_table_schema",
+      "mcp__plugin_neon-plugin_neon__get_database_tables",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": []

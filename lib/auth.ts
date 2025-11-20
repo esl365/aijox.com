@@ -6,6 +6,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { UserRole } from '@prisma/client';
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -15,7 +16,7 @@ const credentialsSchema = z.object({
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma) as any, // Type cast needed for NextAuth v5 beta compatibility
   session: {
-    strategy: 'database',
+    strategy: 'jwt', // Use JWT for credentials provider compatibility
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -87,13 +88,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-        session.user.role = user.role;
+    async jwt({ token, user }) {
+      // Initial sign in
+      if (user) {
+        token.id = user.id as string;
+        token.role = user.role as UserRole;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as UserRole;
 
         // Check if user has completed profile setup
-        const hasProfile = await checkProfileCompletion(user.id, user.role);
+        const hasProfile = await checkProfileCompletion(
+          token.id as string,
+          token.role as string
+        );
         session.user.hasProfile = hasProfile;
       }
       return session;
