@@ -38,7 +38,9 @@
       "WebFetch(domain:teast.co)",
       "WebFetch(domain:www.eslcafe.com)",
       "WebFetch(domain:theworknplay.com)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "mcp__plugin_neon-plugin_neon__provision_neon_auth",
+      "Bash(npx @stackframe/init-stack:*)"
     ],
     "deny": [],
     "ask": []
