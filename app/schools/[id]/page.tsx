@@ -12,9 +12,10 @@ export const metadata: Metadata = {
   description: 'View school information and open positions',
 };
 
-export default function SchoolDetailPage({ params }: { params: { id: string } }) {
+export default async function SchoolDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const school = {
-    id: params.id,
+    id: id,
     name: 'Seoul International Academy',
     location: 'Seoul, South Korea',
     type: 'International School',

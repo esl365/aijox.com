@@ -20,7 +20,8 @@
       "Bash(vercel:*)",
       "Bash(npm run build:*)",
       "Bash(openssl rand:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx shadcn@latest add:*)"
     ],
     "deny": [],
     "ask": []

@@ -12,12 +12,13 @@ export const metadata: Metadata = {
   description: 'Read reviews from teachers who worked here',
 };
 
-export default function SchoolReviewsPage({ params }: { params: { id: string } }) {
+export default async function SchoolReviewsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <Link href={`/schools/${params.id}`}>
+          <Link href={`/schools/${id}`}>
             <Button variant="ghost" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back to School
@@ -31,10 +32,10 @@ export default function SchoolReviewsPage({ params }: { params: { id: string } }
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <ReviewStats schoolId={params.id} />
+            <ReviewStats schoolId={id} />
           </div>
           <div className="lg:col-span-2">
-            <ReviewList schoolId={params.id} />
+            <ReviewList schoolId={id} />
           </div>
         </div>
       </section>

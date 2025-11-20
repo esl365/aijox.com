@@ -14,15 +14,16 @@ export const metadata: Metadata = {
   description: 'Message thread',
 };
 
-export default async function ConversationPage({ params }: { params: { id: string } }) {
+export default async function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user) {
-    redirect(`/login?callbackUrl=/messages/${params.id}`);
+    redirect(`/login?callbackUrl=/messages/${id}`);
   }
 
   const conversation = {
-    id: params.id,
+    id: id,
     school: 'Seoul International Academy',
     recruiter: 'Sarah Kim',
     recruiterRole: 'HR Manager',
