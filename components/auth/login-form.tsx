@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useFormState, useFormStatus } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,9 +33,21 @@ function SubmitButton() {
 }
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
+  const router = useRouter();
+  const [state, dispatch] = useFormState(authenticate, undefined);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
+
+  // Handle successful authentication
+  useEffect(() => {
+    if (state && 'success' in state && state.success) {
+      // Refresh router to load new session, then redirect
+      router.refresh();
+      setTimeout(() => {
+        window.location.href = callbackUrl || '/school/dashboard';
+      }, 100);
+    }
+  }, [state, router, callbackUrl]);
 
   const handleOAuthSignIn = async (provider: 'google' | 'linkedin') => {
     try {
@@ -69,9 +82,9 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {errorMessage && (
+        {state && 'error' in state && state.error && (
           <Alert variant="destructive">
-            <AlertDescription>{errorMessage}</AlertDescription>
+            <AlertDescription>{state.error}</AlertDescription>
           </Alert>
         )}
 
@@ -140,7 +153,6 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
 
         {/* Email/Password Form */}
         <form action={dispatch} className="space-y-4">
-          <input type="hidden" name="callbackUrl" value={callbackUrl || '/school/dashboard'} />
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

@@ -3,34 +3,37 @@
 import { signIn } from '@/lib/auth';
 import { AuthError } from 'next-auth';
 
+type AuthState =
+  | { success: true; error?: never }
+  | { error: string; success?: never }
+  | undefined;
+
 export async function authenticate(
-  prevState: string | undefined,
+  prevState: AuthState,
   formData: FormData,
-) {
+): Promise<AuthState> {
   try {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const callbackUrl = formData.get('callbackUrl') as string | undefined;
 
+    // Don't use redirectTo - let client handle redirect after session is established
     await signIn('credentials', {
       email,
       password,
-      redirectTo: callbackUrl || '/school/dashboard',
+      redirect: false,
     });
+
+    // Return success - client will handle redirect
+    return { success: true };
   } catch (error) {
-    // NextAuth throws NEXT_REDIRECT on successful sign in
-    // We need to re-throw it to allow the redirect to happen
-    if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-      throw error;
-    }
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
-          return 'Invalid credentials.';
+          return { error: 'Invalid credentials.' };
         default:
-          return 'Something went wrong.';
+          return { error: 'Something went wrong.' };
       }
     }
-    throw error;
+    return { error: 'Something went wrong.' };
   }
 }
