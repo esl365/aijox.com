@@ -54,6 +54,12 @@ enum UserRole {
   SCHOOL
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -62,8 +68,40 @@ model User {
   password      String?
   image         String?
   role          UserRole  @default(TEACHER)
+
+  // Verification
+  verificationToken       String?
+  verificationTokenExpiry DateTime?
+
+  // Consent & Privacy
+  consentRequired    Boolean   @default(true)
+  consentMarketing   Boolean   @default(false)
+  consentThirdParty  Boolean   @default(false)
+  consentDate        DateTime?
+
+  // Profile
+  profileCompleteness Int @default(0)
+
+  // Timestamps
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Status
+  status          UserStatus @default(ACTIVE)
+  statusReason    String?
+  statusUpdatedAt DateTime?
+
+  // Password Reset
+  passwordResetToken       String?
+  passwordResetTokenExpiry DateTime?
+
+  // Additional Fields
+  lastEmailNotificationAt DateTime?
+  lastSeenAt              DateTime?
+  availableStartDate      DateTime?
+  jobSearchStatus         String?
+  phoneNumber             String?
 
   accounts         Account[]
   sessions         Session[]
