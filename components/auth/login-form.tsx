@@ -72,15 +72,9 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         return;
       }
 
-      if (result?.ok) {
-        console.log('Login successful, redirecting to:', callbackUrl || '/school/dashboard');
-        // Force full page reload to dashboard to refresh session
-        window.location.href = callbackUrl || '/school/dashboard';
-      } else {
-        console.error('Unexpected result:', result);
-        setError('Login failed. Please try again.');
-        setIsLoading(false);
-      }
+      // If no error, redirect to dashboard
+      console.log('No error, redirecting to:', callbackUrl || '/school/dashboard');
+      window.location.href = callbackUrl || '/school/dashboard';
     } catch (err) {
       setError('Something went wrong. Please try again.');
       console.error('Credentials sign-in error:', err);
