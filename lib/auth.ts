@@ -148,6 +148,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
  * Check if user has completed their profile setup based on role
  */
 async function checkProfileCompletion(userId: string, role: string): Promise<boolean> {
+  // ADMIN doesn't need profile setup
+  if (role === 'ADMIN') {
+    return true;
+  }
+
   if (role === 'TEACHER') {
     const profile = await prisma.teacherProfile.findUnique({
       where: { userId },
