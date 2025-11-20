@@ -9,9 +9,20 @@ import OpenAI from 'openai';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/db';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization to avoid build-time errors
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiClient;
+}
 
 export type ExtractedJobData = {
   // Basic Info
@@ -150,6 +161,7 @@ Extract the following fields and return as JSON:
 
 Return ONLY valid JSON with all fields.`;
 
+  const openai = getOpenAIClient();
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
