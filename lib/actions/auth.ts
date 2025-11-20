@@ -5,6 +5,7 @@ import { AuthError } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { redirect } from 'next/navigation';
 import { getDashboardUrl } from '@/lib/utils/routing';
 
 const loginSchema = z.object({
@@ -32,16 +33,12 @@ export async function authenticate(formData: FormData) {
   }
 
   try {
-    // Server Actions must use redirectTo for NextAuth
-    // This will trigger a NEXT_REDIRECT error which is expected
+    // Server Actions: use redirect: false and manually redirect after success
     await signIn('credentials', {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: '/school/dashboard',
+      redirect: false,
     });
-
-    // This line won't be reached if redirectTo is used
-    return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -51,9 +48,12 @@ export async function authenticate(formData: FormData) {
           return { error: 'Something went wrong' };
       }
     }
-    // Re-throw NEXT_REDIRECT errors to allow redirect to happen
     throw error;
   }
+
+  // If we reach here, authentication was successful
+  // Use Next.js redirect() for Server Actions
+  redirect('/school/dashboard');
 }
 
 export async function register(formData: FormData) {
@@ -72,47 +72,45 @@ export async function register(formData: FormData) {
 
   const { name, email, password } = parsed.data;
 
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingUser) {
+    return { error: 'User with this email already exists' };
+  }
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Create user
+  await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+      emailVerified: new Date(), // Auto-verify for credentials signup
+    },
+  });
+
+  // Automatically sign in the user after registration
   try {
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return { error: 'User with this email already exists' };
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        emailVerified: new Date(), // Auto-verify for credentials signup
-      },
-    });
-
-    // Automatically sign in the user after registration
-    // This will trigger a NEXT_REDIRECT error which is expected
     await signIn('credentials', {
       email,
       password,
-      redirectTo: '/select-role',
+      redirect: false,
     });
-
-    // This line won't be reached if redirectTo is used
-    return { success: true };
   } catch (error) {
-    // If it's an AuthError, return error message
     if (error instanceof AuthError) {
       return { error: 'Failed to sign in after registration' };
     }
-    // Re-throw NEXT_REDIRECT errors to allow redirect to happen
     throw error;
   }
+
+  // If we reach here, registration and sign-in were successful
+  // Use Next.js redirect() for Server Actions
+  redirect('/select-role');
 }
 
 export async function signOutAction() {
