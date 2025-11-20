@@ -30,7 +30,10 @@
       "Bash(node -e:*)",
       "Bash(tsx scripts/check-admin.ts:*)",
       "Bash(npx tsx:*)",
-      "mcp__plugin_neon-plugin_neon__get_connection_string"
+      "mcp__plugin_neon-plugin_neon__get_connection_string",
+      "mcp__plugin_neon-plugin_neon__create_project",
+      "Bash(powershell -Command '$env:DATABASE_URL=\\\"\"postgresql://neondb_owner:npg_ABflk26RPyQe@ep-empty-fire-aewti9cg-pooler.c-2.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require\\\"\"; $env:DIRECT_URL=\\\"\"postgresql://neondb_owner:npg_ABflk26RPyQe@ep-empty-fire-aewti9cg.c-2.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require\\\"\"; npx prisma migrate dev --name init')",
+      "Bash(.env)"
     ],
     "deny": [],
     "ask": []

@@ -6,81 +6,33 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Footer } from '@/components/shared/footer';
 import { Search, MapPin, Star, Users, Globe, ArrowRight } from 'lucide-react';
+import { getSchools, getSchoolStatsByCountry } from '@/app/actions/schools';
 
 export const metadata: Metadata = {
   title: 'Schools Directory',
   description: 'Browse international schools and teaching institutions',
 };
 
-export default function SchoolsPage() {
-  const schools = [
-    {
-      id: 1,
-      name: 'Seoul International Academy',
-      location: 'Seoul, South Korea',
-      type: 'International School',
-      rating: 4.8,
-      reviews: 127,
-      teachers: 85,
-      logo: '🏫',
-      openPositions: 5,
-    },
-    {
-      id: 2,
-      name: 'Dubai English Speaking School',
-      location: 'Dubai, UAE',
-      type: 'Private School',
-      rating: 4.9,
-      reviews: 203,
-      teachers: 145,
-      logo: '🎓',
-      openPositions: 12,
-    },
-    {
-      id: 3,
-      name: 'Shanghai American School',
-      location: 'Shanghai, China',
-      type: 'International School',
-      rating: 4.7,
-      reviews: 156,
-      teachers: 210,
-      logo: '🏫',
-      openPositions: 8,
-    },
-    {
-      id: 4,
-      name: 'Bangkok British School',
-      location: 'Bangkok, Thailand',
-      type: 'British Curriculum',
-      rating: 4.6,
-      reviews: 98,
-      teachers: 92,
-      logo: '🎓',
-      openPositions: 3,
-    },
-    {
-      id: 5,
-      name: 'Tokyo International School',
-      location: 'Tokyo, Japan',
-      type: 'International School',
-      rating: 4.9,
-      reviews: 178,
-      teachers: 165,
-      logo: '🏫',
-      openPositions: 6,
-    },
-    {
-      id: 6,
-      name: 'Singapore International Academy',
-      location: 'Singapore',
-      type: 'IB Curriculum',
-      rating: 4.8,
-      reviews: 234,
-      teachers: 198,
-      logo: '🎓',
-      openPositions: 10,
-    },
-  ];
+export default async function SchoolsPage() {
+  const { schools: schoolsData, total } = await getSchools({}, 1, 50);
+  const stats = await getSchoolStatsByCountry();
+
+  // Map emoji based on school type
+  const getSchoolEmoji = (type: string | null) => {
+    if (!type) return '🏫';
+    if (type.includes('British') || type.includes('British Curriculum')) return '🎓';
+    if (type.includes('IB')) return '🎓';
+    return '🏫';
+  };
+
+  const schools = schoolsData.map((school) => ({
+    id: school.id,
+    name: school.schoolName,
+    location: `${school.city}, ${school.country}`,
+    type: school.schoolType || 'International School',
+    logo: getSchoolEmoji(school.schoolType),
+    openPositions: school._count?.jobPostings || 0,
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -123,16 +75,16 @@ export default function SchoolsPage() {
       <section className="container mx-auto px-4 pb-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-1">500+</div>
+            <div className="text-3xl font-bold text-primary mb-1">{total}+</div>
             <div className="text-sm text-muted-foreground">Schools</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-1">10+</div>
+            <div className="text-3xl font-bold text-primary mb-1">{stats.length}+</div>
             <div className="text-sm text-muted-foreground">Countries</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-1">5,000+</div>
-            <div className="text-sm text-muted-foreground">Teachers</div>
+            <div className="text-3xl font-bold text-primary mb-1">{schools.reduce((sum, s) => sum + s.openPositions, 0)}+</div>
+            <div className="text-sm text-muted-foreground">Open Positions</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-primary mb-1">100%</div>
@@ -165,17 +117,6 @@ export default function SchoolsPage() {
                           <MapPin className="h-3 w-3" />
                           {school.location}
                         </CardDescription>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="font-semibold">{school.rating}</span>
-                            <span className="text-muted-foreground">({school.reviews})</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Users className="h-4 w-4" />
-                            <span>{school.teachers} teachers</span>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </CardHeader>
