@@ -63,15 +63,23 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         redirect: false,
       });
 
+      console.log('SignIn result:', result);
+
       if (result?.error) {
+        console.error('Login error:', result.error);
         setError('Invalid email or password');
         setIsLoading(false);
         return;
       }
 
       if (result?.ok) {
+        console.log('Login successful, redirecting to:', callbackUrl || '/school/dashboard');
         // Force full page reload to dashboard to refresh session
         window.location.href = callbackUrl || '/school/dashboard';
+      } else {
+        console.error('Unexpected result:', result);
+        setError('Login failed. Please try again.');
+        setIsLoading(false);
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
