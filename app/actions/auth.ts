@@ -2,7 +2,6 @@
 
 import { signIn } from '@/lib/auth';
 import { AuthError } from 'next-auth';
-import { redirect } from 'next/navigation';
 
 export async function authenticate(
   prevState: string | undefined,
@@ -14,29 +13,44 @@ export async function authenticate(
     const callbackUrl = formData.get('callbackUrl') as string | undefined;
 
     console.log('[Server Action] Attempting sign in for:', email);
+    console.log('[Server Action] Callback URL:', callbackUrl || '/school/dashboard');
 
-    // Use redirect: false to handle errors properly
-    const result = await signIn('credentials', {
+    // Use redirectTo - NextAuth will handle the redirect and throw NEXT_REDIRECT
+    await signIn('credentials', {
       email,
       password,
-      redirect: false,
+      redirectTo: callbackUrl || '/school/dashboard',
     });
 
-    console.log('[Server Action] Sign in result:', result);
+    console.log('[Server Action] This line should not be reached if successful');
+  } catch (error) {
+    console.error('[Server Action] Caught error:', error);
 
-    // Check for errors
-    if (result?.error) {
-      console.error('[Server Action] Sign in failed:', result.error);
-      return 'Invalid credentials.';
+    // NEXT_REDIRECT is thrown on successful sign in - must re-throw it
+    if (error instanceof Error) {
+      const errorMessage = error.message || '';
+      const errorName = error.name || '';
+      const errorDigest = (error as any).digest || '';
+
+      console.log('[Server Action] Error details:', {
+        name: errorName,
+        message: errorMessage,
+        digest: errorDigest
+      });
+
+      // Check for NEXT_REDIRECT in multiple places
+      if (
+        errorMessage.includes('NEXT_REDIRECT') ||
+        errorName === 'NEXT_REDIRECT' ||
+        errorDigest?.includes('NEXT_REDIRECT')
+      ) {
+        console.log('[Server Action] Detected NEXT_REDIRECT - re-throwing for redirect');
+        throw error;
+      }
     }
 
-    // Sign in successful - session cookie is set
-    // Perform server-side redirect (cookie will be included in response)
-    console.log('[Server Action] Sign in successful, redirecting to:', callbackUrl || '/school/dashboard');
-    redirect(callbackUrl || '/school/dashboard');
-  } catch (error) {
-    console.error('[Server Action] Error during sign in:', error);
     if (error instanceof AuthError) {
+      console.error('[Server Action] AuthError type:', error.type);
       switch (error.type) {
         case 'CredentialsSignin':
           return 'Invalid credentials.';
@@ -44,7 +58,8 @@ export async function authenticate(
           return 'Something went wrong.';
       }
     }
-    // Re-throw redirect errors
-    throw error;
+
+    console.error('[Server Action] Unexpected error, returning generic message');
+    return 'Something went wrong.';
   }
 }
