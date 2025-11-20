@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,29 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-import { authenticate } from '@/app/actions/auth';
 
 interface LoginFormProps {
   callbackUrl?: string;
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button
-      type="submit"
-      className="w-full"
-      disabled={pending}
-    >
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Sign in
-    </Button>
-  );
-}
-
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
 
@@ -59,6 +43,41 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+
+      console.log('Submitting credentials login');
+
+      // Use redirect: true like OAuth providers
+      // NextAuth will handle the redirect automatically
+      const result = await signIn('credentials', {
+        email,
+        password,
+        callbackUrl: callbackUrl || '/school/dashboard',
+        redirect: true, // Let NextAuth handle redirect
+      });
+
+      console.log('signIn result:', result);
+
+      // This should not be reached if redirect: true works
+      if (result?.error) {
+        setError('Invalid email or password');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred during sign in');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <Card>
@@ -69,9 +88,9 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {errorMessage && (
+        {error && (
           <Alert variant="destructive">
-            <AlertDescription>{errorMessage}</AlertDescription>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
@@ -139,8 +158,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </div>
 
         {/* Email/Password Form */}
-        <form action={dispatch} className="space-y-4">
-          <input type="hidden" name="callbackUrl" value={callbackUrl || '/school/dashboard'} />
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -171,7 +189,14 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
             />
           </div>
 
-          <SubmitButton />
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading || isGoogleLoading || isLinkedInLoading}
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Sign in
+          </Button>
         </form>
       </CardContent>
 
