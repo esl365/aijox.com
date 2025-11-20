@@ -40,7 +40,11 @@
       "WebFetch(domain:theworknplay.com)",
       "Bash(printf:*)",
       "mcp__plugin_neon-plugin_neon__provision_neon_auth",
-      "Bash(npx @stackframe/init-stack:*)"
+      "Bash(npx @stackframe/init-stack:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx better-auth:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git ls-tree:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signUp } from '@/lib/auth-client';
+import { useState, useTransition } from 'react';
+import { register } from '@/lib/actions/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,35 +11,26 @@ import Link from 'next/link';
 
 export default function SignupPage() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
-    try {
-      await signUp.email({
-        name,
-        email,
-        password,
-      }, {
-        onSuccess: () => {
-          router.push('/select-role');
-        },
-        onError: (ctx) => {
-          setError(ctx.error.message || 'Sign up failed');
-        },
-      });
-    } catch (err) {
-      setError('An error occurred');
-    } finally {
-      setLoading(false);
-    }
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      const result = await register(formData);
+
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        // Successful registration - redirect to role selection
+        router.push('/select-role');
+        router.refresh();
+      }
+    });
   };
 
   return (
@@ -61,11 +52,10 @@ export default function SignupPage() {
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
+                name="name"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 required
-                disabled={loading}
+                disabled={isPending}
               />
             </div>
 
@@ -73,11 +63,10 @@ export default function SignupPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={loading}
+                disabled={isPending}
               />
             </div>
 
@@ -85,17 +74,16 @@ export default function SignupPage() {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                disabled={loading}
+                disabled={isPending}
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Sign Up'}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? 'Creating account...' : 'Sign Up'}
             </Button>
           </form>
 

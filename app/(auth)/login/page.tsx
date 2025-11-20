@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from '@/lib/auth-client';
+import { useState, useTransition } from 'react';
+import { authenticate } from '@/lib/actions/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,33 +11,26 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
-    try {
-      await signIn.email({
-        email,
-        password,
-      }, {
-        onSuccess: () => {
-          router.push('/school/dashboard');
-        },
-        onError: (ctx) => {
-          setError(ctx.error.message || 'Login failed');
-        },
-      });
-    } catch (err) {
-      setError('An error occurred');
-    } finally {
-      setLoading(false);
-    }
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      const result = await authenticate(formData);
+
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        // Successful login - redirect to dashboard
+        router.push('/school/dashboard');
+        router.refresh();
+      }
+    });
   };
 
   return (
@@ -59,11 +52,10 @@ export default function LoginPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={loading}
+                disabled={isPending}
               />
             </div>
 
@@ -71,16 +63,15 @@ export default function LoginPage() {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={loading}
+                disabled={isPending}
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
