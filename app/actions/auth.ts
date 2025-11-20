@@ -16,16 +16,23 @@ export async function authenticate(
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    console.log('[Server Action] Attempting sign in for:', email);
+
     // Don't use redirectTo - let client handle redirect after session is established
-    await signIn('credentials', {
+    const result = await signIn('credentials', {
       email,
       password,
       redirect: false,
     });
 
+    console.log('[Server Action] Sign in result:', result);
+
     // Return success - client will handle redirect
-    return { success: true };
+    const successState = { success: true as const };
+    console.log('[Server Action] Returning success state:', successState);
+    return successState;
   } catch (error) {
+    console.error('[Server Action] Error during sign in:', error);
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':

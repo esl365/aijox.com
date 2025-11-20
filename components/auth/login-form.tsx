@@ -40,10 +40,13 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
 
   // Handle successful authentication
   useEffect(() => {
+    console.log('Auth state changed:', state);
     if (state && 'success' in state && state.success) {
+      console.log('Success detected, redirecting to:', callbackUrl || '/school/dashboard');
       // Refresh router to load new session, then redirect
       router.refresh();
       setTimeout(() => {
+        console.log('Executing redirect now');
         window.location.href = callbackUrl || '/school/dashboard';
       }, 100);
     }
