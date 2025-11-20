@@ -55,8 +55,10 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
 
           if (session?.user) {
             console.log('Session ready! User:', session.user.email);
-            console.log('Redirecting to:', callbackUrl || '/school/dashboard');
-            window.location.href = callbackUrl || '/school/dashboard';
+            console.log('Reloading page - middleware will handle redirect');
+            // Instead of redirecting directly, reload the page
+            // Middleware will see the session and redirect to dashboard
+            window.location.reload();
             return;
           }
 
@@ -66,8 +68,8 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         }
 
         console.error('Session not ready after', maxAttempts, 'attempts');
-        // Force redirect anyway
-        window.location.href = callbackUrl || '/school/dashboard';
+        // Force reload anyway - middleware should handle it
+        window.location.reload();
       };
 
       checkSessionAndRedirect();
