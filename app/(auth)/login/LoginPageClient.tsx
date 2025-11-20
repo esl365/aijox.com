@@ -21,7 +21,9 @@ export default function LoginPageClient() {
         return;
       }
 
-      if (!session.user.hasProfile) {
+      // School users: go directly to dashboard (has auto-profile creation)
+      // Other roles: check hasProfile first
+      if (!session.user.hasProfile && session.user.role !== 'SCHOOL') {
         router.push(getSetupUrl(session.user.role, 'select-role'));
         return;
       }
