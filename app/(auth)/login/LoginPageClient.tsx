@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { LoginForm } from '@/components/auth/login-form';
-import { getSetupUrl } from '@/lib/utils/routing';
+import { getSetupUrl, getDashboardUrl } from '@/lib/utils/routing';
 
 export default function LoginPageClient() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function LoginPageClient() {
         return;
       }
 
-      router.push(callbackUrl || '/dashboard');
+      router.push(callbackUrl || getDashboardUrl(session.user.role));
     }
   }, [session, status, router, callbackUrl]);
 

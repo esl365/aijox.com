@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { getDashboardUrl } from '@/lib/utils/routing';
 
 interface LoginFormProps {
   callbackUrl?: string;
@@ -37,7 +38,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       setError(null);
 
       await signIn(provider, {
-        callbackUrl: callbackUrl || '/dashboard',
+        callbackUrl: callbackUrl || '/',
         redirect: true,
       });
     } catch (err) {
@@ -70,7 +71,8 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       }
 
       if (result?.ok) {
-        router.push(callbackUrl || '/dashboard');
+        // Redirect to callback URL or home, where middleware will route based on role
+        router.push(callbackUrl || '/');
         router.refresh();
       }
     } catch (err) {

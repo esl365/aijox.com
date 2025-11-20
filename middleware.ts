@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { getSetupUrl } from '@/lib/utils/routing';
+import { getSetupUrl, getDashboardUrl } from '@/lib/utils/routing';
 
 export default auth((req) => {
   const { nextUrl } = req;
@@ -35,7 +35,7 @@ export default auth((req) => {
       return NextResponse.redirect(new URL(getSetupUrl(userRole, 'select-role'), nextUrl));
     }
     // Otherwise go to dashboard
-    return NextResponse.redirect(new URL('/dashboard', nextUrl));
+    return NextResponse.redirect(new URL(getDashboardUrl(userRole), nextUrl));
   }
 
   // Allow public routes
@@ -65,7 +65,7 @@ export default auth((req) => {
   if (isLoggedIn && userRole) {
     // Admin access control
     if (nextUrl.pathname.startsWith('/admin') && userRole !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/dashboard', nextUrl));
+      return NextResponse.redirect(new URL(getDashboardUrl(userRole), nextUrl));
     }
 
     // Recruiter/School access control
@@ -75,7 +75,7 @@ export default auth((req) => {
       userRole !== 'SCHOOL' &&
       userRole !== 'ADMIN'
     ) {
-      return NextResponse.redirect(new URL('/dashboard', nextUrl));
+      return NextResponse.redirect(new URL(getDashboardUrl(userRole), nextUrl));
     }
 
     // Teacher access control
@@ -85,7 +85,7 @@ export default auth((req) => {
       userRole !== 'TEACHER' &&
       userRole !== 'ADMIN'
     ) {
-      return NextResponse.redirect(new URL('/dashboard', nextUrl));
+      return NextResponse.redirect(new URL(getDashboardUrl(userRole), nextUrl));
     }
   }
 
