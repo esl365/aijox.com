@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -42,15 +42,37 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
   useEffect(() => {
     console.log('Auth state changed:', state);
     if (state && 'success' in state && state.success) {
-      console.log('Success detected, redirecting to:', callbackUrl || '/school/dashboard');
-      // Refresh router to load new session, then redirect
-      router.refresh();
-      setTimeout(() => {
-        console.log('Executing redirect now');
+      console.log('Success detected, waiting for session to be ready...');
+
+      // Wait for session to be fully established before redirecting
+      const checkSessionAndRedirect = async () => {
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (attempts < maxAttempts) {
+          console.log(`Checking session, attempt ${attempts + 1}/${maxAttempts}`);
+          const session = await getSession();
+
+          if (session?.user) {
+            console.log('Session ready! User:', session.user.email);
+            console.log('Redirecting to:', callbackUrl || '/school/dashboard');
+            window.location.href = callbackUrl || '/school/dashboard';
+            return;
+          }
+
+          attempts++;
+          // Wait 200ms between attempts
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        console.error('Session not ready after', maxAttempts, 'attempts');
+        // Force redirect anyway
         window.location.href = callbackUrl || '/school/dashboard';
-      }, 100);
+      };
+
+      checkSessionAndRedirect();
     }
-  }, [state, router, callbackUrl]);
+  }, [state, callbackUrl]);
 
   const handleOAuthSignIn = async (provider: 'google' | 'linkedin') => {
     try {
