@@ -56,12 +56,23 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     setError(null);
 
     try {
-      await signIn('credentials', {
+      const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         callbackUrl: callbackUrl || '/school/dashboard',
-        redirect: true,
+        redirect: false,
       });
+
+      if (result?.error) {
+        setError('Invalid email or password');
+        setIsLoading(false);
+        return;
+      }
+
+      if (result?.ok) {
+        // Force full page reload to dashboard to refresh session
+        window.location.href = callbackUrl || '/school/dashboard';
+      }
     } catch (err) {
       setError('Something went wrong. Please try again.');
       console.error('Credentials sign-in error:', err);
