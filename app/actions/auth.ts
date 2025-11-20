@@ -18,6 +18,11 @@ export async function authenticate(
       redirectTo: callbackUrl || '/school/dashboard',
     });
   } catch (error) {
+    // NextAuth throws NEXT_REDIRECT on successful sign in
+    // We need to re-throw it to allow the redirect to happen
+    if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+      throw error;
+    }
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
