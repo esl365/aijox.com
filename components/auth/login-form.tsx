@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,14 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-import { getDashboardUrl } from '@/lib/utils/routing';
 
 interface LoginFormProps {
   callbackUrl?: string;
 }
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
@@ -59,25 +56,17 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     setError(null);
 
     try {
-      const result = await signIn('credentials', {
+      // Use NextAuth's built-in redirect with callbackUrl
+      // This will trigger middleware which handles role-based routing
+      await signIn('credentials', {
         email: formData.email,
         password: formData.password,
-        redirect: false,
+        callbackUrl: callbackUrl || '/school/dashboard', // Default to school dashboard for testing
+        redirect: true, // Let NextAuth handle the redirect
       });
-
-      if (result?.error) {
-        setError('Invalid email or password');
-        return;
-      }
-
-      if (result?.ok) {
-        // Force full page reload to ensure session is properly loaded
-        window.location.href = callbackUrl || '/';
-      }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Invalid email or password');
       console.error('Credentials sign-in error:', err);
-    } finally {
       setIsLoading(false);
     }
   };
