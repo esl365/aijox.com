@@ -71,9 +71,8 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       }
 
       if (result?.ok) {
-        // Redirect to callback URL or home, where middleware will route based on role
-        router.push(callbackUrl || '/');
-        router.refresh();
+        // Force full page reload to ensure session is properly loaded
+        window.location.href = callbackUrl || '/';
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
