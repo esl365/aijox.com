@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import { authenticate } from '@/lib/actions/auth';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
 
@@ -25,8 +23,10 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error);
+      } else if (result?.success) {
+        // Use window.location.href to ensure cookies are properly set
+        window.location.href = '/school/dashboard';
       }
-      // If no error, NextAuth will automatically redirect via redirectTo
     });
   };
 

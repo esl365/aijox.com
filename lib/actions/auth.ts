@@ -33,12 +33,18 @@ export async function authenticate(formData: FormData) {
   }
 
   try {
-    // Server Actions: use redirect: false and manually redirect after success
-    await signIn('credentials', {
+    const result = await signIn('credentials', {
       email: parsed.data.email,
       password: parsed.data.password,
       redirect: false,
     });
+
+    if (result?.error) {
+      return { error: 'Invalid email or password' };
+    }
+
+    // Return success - client will handle redirect
+    return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -48,12 +54,8 @@ export async function authenticate(formData: FormData) {
           return { error: 'Something went wrong' };
       }
     }
-    throw error;
+    return { error: 'An unexpected error occurred' };
   }
-
-  // If we reach here, authentication was successful
-  // Use Next.js redirect() for Server Actions
-  redirect('/school/dashboard');
 }
 
 export async function register(formData: FormData) {
@@ -96,21 +98,24 @@ export async function register(formData: FormData) {
 
   // Automatically sign in the user after registration
   try {
-    await signIn('credentials', {
+    const result = await signIn('credentials', {
       email,
       password,
       redirect: false,
     });
+
+    if (result?.error) {
+      return { error: 'Failed to sign in after registration' };
+    }
+
+    // Return success - client will handle redirect
+    return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: 'Failed to sign in after registration' };
     }
-    throw error;
+    return { error: 'An unexpected error occurred' };
   }
-
-  // If we reach here, registration and sign-in were successful
-  // Use Next.js redirect() for Server Actions
-  redirect('/select-role');
 }
 
 export async function signOutAction() {
