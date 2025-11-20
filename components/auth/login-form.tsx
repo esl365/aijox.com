@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { authenticate } from '@/app/actions/auth';
 
 interface LoginFormProps {
   callbackUrl?: string;
@@ -49,18 +50,18 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
 
-    console.log('Submitting credentials login for:', email);
+    // Add callbackUrl to form data
+    formData.append('callbackUrl', callbackUrl || '/school/dashboard');
 
-    // Don't await when redirect: true - it will do a full page navigation
-    // If there's an error, NextAuth will redirect back to this page with error in URL
-    signIn('credentials', {
-      email,
-      password,
-      callbackUrl: callbackUrl || '/school/dashboard',
-    });
+    // Use Server Action instead of client-side signIn
+    const result = await authenticate(undefined, formData);
+
+    if (result) {
+      setError(result);
+      setIsLoading(false);
+    }
+    // If no error, Server Action will redirect
   };
 
 
