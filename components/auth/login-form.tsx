@@ -53,22 +53,31 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       const email = formData.get('email') as string;
       const password = formData.get('password') as string;
 
-      console.log('Submitting credentials login');
+      console.log('Submitting credentials login for:', email);
 
-      // Use redirect: true like OAuth providers
-      // NextAuth will handle the redirect automatically
+      // Use redirect: false to see actual errors
       const result = await signIn('credentials', {
         email,
         password,
         callbackUrl: callbackUrl || '/school/dashboard',
-        redirect: true, // Let NextAuth handle redirect
+        redirect: false, // Check for errors first
       });
 
       console.log('signIn result:', result);
 
-      // This should not be reached if redirect: true works
       if (result?.error) {
+        console.error('Sign in error:', result.error);
         setError('Invalid email or password');
+        return;
+      }
+
+      if (result?.ok) {
+        console.log('Sign in successful, redirecting...');
+        // Manually redirect after successful sign in
+        window.location.href = callbackUrl || '/school/dashboard';
+      } else {
+        console.error('Unexpected result:', result);
+        setError('Something went wrong');
       }
     } catch (err) {
       console.error('Login error:', err);
