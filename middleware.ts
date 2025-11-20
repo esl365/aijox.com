@@ -38,6 +38,18 @@ export default auth((req) => {
     return NextResponse.redirect(new URL(getDashboardUrl(userRole), nextUrl));
   }
 
+  // Redirect logged-in users from home page to their dashboard
+  if (isLoggedIn && nextUrl.pathname === '/' && userRole) {
+    // School users can go to dashboard even without profile (auto-creation there)
+    if (userRole === 'SCHOOL' || hasProfile) {
+      return NextResponse.redirect(new URL(getDashboardUrl(userRole), nextUrl));
+    }
+    // Other users need to complete profile first
+    if (!hasProfile) {
+      return NextResponse.redirect(new URL(getSetupUrl(userRole, 'select-role'), nextUrl));
+    }
+  }
+
   // Allow public routes
   if (isPublicRoute) {
     return NextResponse.next();
