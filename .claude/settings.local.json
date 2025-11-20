@@ -37,7 +37,8 @@
       "WebFetch(domain:www.tes.com)",
       "WebFetch(domain:teast.co)",
       "WebFetch(domain:www.eslcafe.com)",
-      "WebFetch(domain:theworknplay.com)"
+      "WebFetch(domain:theworknplay.com)",
+      "Bash(printf:*)"
     ],
     "deny": [],
     "ask": []

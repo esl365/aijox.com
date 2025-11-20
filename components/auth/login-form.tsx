@@ -55,39 +55,19 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
 
       console.log('Submitting credentials login for:', email);
 
-      // Use redirect: false to see actual errors
-      const result = await signIn('credentials', {
+      // Let NextAuth handle the full redirect flow to set cookies properly
+      await signIn('credentials', {
         email,
         password,
         callbackUrl: callbackUrl || '/school/dashboard',
-        redirect: false, // Check for errors first
+        redirect: true, // Let NextAuth handle redirect and cookie setting
       });
 
-      console.log('signIn result:', result);
-
-      if (result?.error) {
-        console.error('Sign in error:', result.error);
-        setError('Invalid email or password');
-        return;
-      }
-
-      if (result?.ok) {
-        console.log('Sign in successful, reloading page...');
-        // Instead of redirecting to dashboard, reload the page
-        // Middleware will see the session and redirect to dashboard automatically
-        // This ensures cookies are properly included in the request
-        setTimeout(() => {
-          console.log('Reloading now...');
-          window.location.reload();
-        }, 300);
-      } else {
-        console.error('Unexpected result:', result);
-        setError('Something went wrong');
-      }
+      // This code won't be reached if redirect succeeds
+      console.log('This should not be logged if redirect worked');
     } catch (err) {
       console.error('Login error:', err);
-      setError('An error occurred during sign in');
-    } finally {
+      setError('Invalid email or password');
       setIsLoading(false);
     }
   };
