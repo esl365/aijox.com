@@ -48,28 +48,19 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     setError(null);
     setIsLoading(true);
 
-    try {
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get('email') as string;
-      const password = formData.get('password') as string;
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-      console.log('Submitting credentials login for:', email);
+    console.log('Submitting credentials login for:', email);
 
-      // Let NextAuth handle the full redirect flow to set cookies properly
-      await signIn('credentials', {
-        email,
-        password,
-        callbackUrl: callbackUrl || '/school/dashboard',
-        redirect: true, // Let NextAuth handle redirect and cookie setting
-      });
-
-      // This code won't be reached if redirect succeeds
-      console.log('This should not be logged if redirect worked');
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Invalid email or password');
-      setIsLoading(false);
-    }
+    // Don't await when redirect: true - it will do a full page navigation
+    // If there's an error, NextAuth will redirect back to this page with error in URL
+    signIn('credentials', {
+      email,
+      password,
+      callbackUrl: callbackUrl || '/school/dashboard',
+    });
   };
 
 
