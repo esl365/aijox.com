@@ -1,14 +1,14 @@
+'use client';
+
+import { SignUp } from '@stackframe/stack';
 import { Metadata } from 'next';
-import SignupPageClient from './SignupPageClient';
-
-export const metadata: Metadata = {
-  title: 'Sign Up | Global Educator Nexus',
-  description: 'Create your account and join thousands of educators worldwide',
-};
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 export default function SignupPage() {
-  return <SignupPageClient />;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
+      <div className="w-full max-w-md">
+        <SignUp />
+      </div>
+    </div>
+  );
 }
