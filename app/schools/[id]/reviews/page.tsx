@@ -6,6 +6,8 @@ import { ReviewList } from '@/components/reviews/ReviewList';
 import { ReviewStats } from '@/components/reviews/ReviewStats';
 import { Footer } from '@/components/shared/footer';
 import { ArrowLeft } from 'lucide-react';
+import type { ReviewWithAuthor } from '@/app/actions/reviews';
+import { ReviewType, ReviewStatus } from '@prisma/client';
 
 export const metadata: Metadata = {
   title: 'School Reviews',
@@ -16,12 +18,12 @@ export default async function SchoolReviewsPage({ params }: { params: Promise<{ 
   const { id } = await params;
 
   // Mock review data matching ReviewWithAuthor type
-  const mockReviews = [
+  const mockReviews: ReviewWithAuthor[] = [
     {
       id: '1',
       createdAt: new Date('2025-01-15'),
-      reviewType: 'SCHOOL' as const,
-      status: 'APPROVED' as const,
+      reviewType: ReviewType.SCHOOL,
+      status: ReviewStatus.APPROVED,
       authorId: 'teacher1',
       authorName: 'John Doe',
       rating: 5,
@@ -37,8 +39,8 @@ export default async function SchoolReviewsPage({ params }: { params: Promise<{ 
     {
       id: '2',
       createdAt: new Date('2025-01-10'),
-      reviewType: 'SCHOOL' as const,
-      status: 'APPROVED' as const,
+      reviewType: ReviewType.SCHOOL,
+      status: ReviewStatus.APPROVED,
       authorId: 'teacher2',
       authorName: 'Sarah Smith',
       rating: 5,
@@ -54,8 +56,8 @@ export default async function SchoolReviewsPage({ params }: { params: Promise<{ 
     {
       id: '3',
       createdAt: new Date('2025-01-05'),
-      reviewType: 'SCHOOL' as const,
-      status: 'APPROVED' as const,
+      reviewType: ReviewType.SCHOOL,
+      status: ReviewStatus.APPROVED,
       authorId: 'teacher3',
       authorName: 'Michael Chen',
       rating: 4,
