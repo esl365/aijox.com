@@ -1,25 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, getCsrfToken } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-import { authenticate } from '@/app/actions/auth';
 
 interface LoginFormProps {
   callbackUrl?: string;
 }
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
+  const [csrfToken, setCsrfToken] = useState('');
+
+  useEffect(() => {
+    getCsrfToken().then(token => setCsrfToken(token || ''));
+  }, []);
 
   const handleOAuthSignIn = async (provider: 'google' | 'linkedin') => {
     try {
@@ -44,27 +45,6 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-
-    // Add callbackUrl to form data
-    formData.append('callbackUrl', callbackUrl || '/school/dashboard');
-
-    // Use Server Action instead of client-side signIn
-    const result = await authenticate(undefined, formData);
-
-    if (result) {
-      setError(result);
-      setIsLoading(false);
-    }
-    // If no error, Server Action will redirect
-  };
-
-
   return (
     <Card>
       <CardHeader>
@@ -74,12 +54,6 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
         {/* OAuth Providers */}
         <div className="space-y-3">
           <Button
@@ -144,7 +118,10 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </div>
 
         {/* Email/Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action="/api/auth/callback/credentials" method="POST" className="space-y-4">
+          <input type="hidden" name="csrfToken" value={csrfToken} />
+          <input type="hidden" name="callbackUrl" value={callbackUrl || '/school/dashboard'} />
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -178,9 +155,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoading || isGoogleLoading || isLinkedInLoading}
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign in
           </Button>
         </form>
