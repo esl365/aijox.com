@@ -22,7 +22,7 @@ export default async function SchoolReviewsPage({ params }: { params: Promise<{ 
     {
       id: '1',
       createdAt: new Date('2025-01-15'),
-      reviewType: ReviewType.SCHOOL,
+      reviewType: ReviewType.SCHOOL_REVIEW,
       status: ReviewStatus.APPROVED,
       authorId: 'teacher1',
       authorName: 'John Doe',
@@ -39,7 +39,7 @@ export default async function SchoolReviewsPage({ params }: { params: Promise<{ 
     {
       id: '2',
       createdAt: new Date('2025-01-10'),
-      reviewType: ReviewType.SCHOOL,
+      reviewType: ReviewType.SCHOOL_REVIEW,
       status: ReviewStatus.APPROVED,
       authorId: 'teacher2',
       authorName: 'Sarah Smith',
@@ -56,7 +56,7 @@ export default async function SchoolReviewsPage({ params }: { params: Promise<{ 
     {
       id: '3',
       createdAt: new Date('2025-01-05'),
-      reviewType: ReviewType.SCHOOL,
+      reviewType: ReviewType.SCHOOL_REVIEW,
       status: ReviewStatus.APPROVED,
       authorId: 'teacher3',
       authorName: 'Michael Chen',
