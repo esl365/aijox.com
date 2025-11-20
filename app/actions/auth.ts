@@ -1,24 +1,21 @@
 'use server';
 
-import { signIn } from '@/lib/auth';
+import { signIn, auth } from '@/lib/auth';
 import { AuthError } from 'next-auth';
-
-type AuthState =
-  | { success: true; error?: never }
-  | { error: string; success?: never }
-  | undefined;
+import { redirect } from 'next/navigation';
 
 export async function authenticate(
-  prevState: AuthState,
+  prevState: string | undefined,
   formData: FormData,
-): Promise<AuthState> {
+) {
   try {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const callbackUrl = formData.get('callbackUrl') as string | undefined;
 
     console.log('[Server Action] Attempting sign in for:', email);
 
-    // Don't use redirectTo - let client handle redirect after session is established
+    // Use redirect: false to handle errors properly
     const result = await signIn('credentials', {
       email,
       password,
@@ -27,20 +24,34 @@ export async function authenticate(
 
     console.log('[Server Action] Sign in result:', result);
 
-    // Return success - client will handle redirect
-    const successState = { success: true as const };
-    console.log('[Server Action] Returning success state:', successState);
-    return successState;
+    // If sign in was successful, check session and redirect
+    if (result?.error) {
+      console.error('[Server Action] Sign in failed:', result.error);
+      return 'Invalid credentials.';
+    }
+
+    // Verify session was created
+    const session = await auth();
+    console.log('[Server Action] Session after sign in:', session?.user?.email);
+
+    if (!session?.user) {
+      return 'Failed to create session.';
+    }
+
+    // Session is valid, perform server-side redirect
+    console.log('[Server Action] Redirecting to:', callbackUrl || '/school/dashboard');
+    redirect(callbackUrl || '/school/dashboard');
   } catch (error) {
     console.error('[Server Action] Error during sign in:', error);
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
-          return { error: 'Invalid credentials.' };
+          return 'Invalid credentials.';
         default:
-          return { error: 'Something went wrong.' };
+          return 'Something went wrong.';
       }
     }
-    return { error: 'Something went wrong.' };
+    // Re-throw redirect errors
+    throw error;
   }
 }

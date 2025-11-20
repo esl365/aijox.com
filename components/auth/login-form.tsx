@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { signIn, getSession } from 'next-auth/react';
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useFormState, useFormStatus } from 'react-dom';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,48 +32,9 @@ function SubmitButton() {
 }
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const router = useRouter();
-  const [state, dispatch] = useFormState(authenticate, undefined);
+  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
-
-  // Handle successful authentication
-  useEffect(() => {
-    console.log('Auth state changed:', state);
-    if (state && 'success' in state && state.success) {
-      console.log('Success detected, waiting for session to be ready...');
-
-      // Wait for session to be fully established before redirecting
-      const checkSessionAndRedirect = async () => {
-        let attempts = 0;
-        const maxAttempts = 10;
-
-        while (attempts < maxAttempts) {
-          console.log(`Checking session, attempt ${attempts + 1}/${maxAttempts}`);
-          const session = await getSession();
-
-          if (session?.user) {
-            console.log('Session ready! User:', session.user.email);
-            console.log('Reloading page - middleware will handle redirect');
-            // Instead of redirecting directly, reload the page
-            // Middleware will see the session and redirect to dashboard
-            window.location.reload();
-            return;
-          }
-
-          attempts++;
-          // Wait 200ms between attempts
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        console.error('Session not ready after', maxAttempts, 'attempts');
-        // Force reload anyway - middleware should handle it
-        window.location.reload();
-      };
-
-      checkSessionAndRedirect();
-    }
-  }, [state, callbackUrl]);
 
   const handleOAuthSignIn = async (provider: 'google' | 'linkedin') => {
     try {
@@ -109,9 +69,9 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {state && 'error' in state && state.error && (
+        {errorMessage && (
           <Alert variant="destructive">
-            <AlertDescription>{state.error}</AlertDescription>
+            <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}
 
@@ -180,6 +140,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
 
         {/* Email/Password Form */}
         <form action={dispatch} className="space-y-4">
+          <input type="hidden" name="callbackUrl" value={callbackUrl || '/school/dashboard'} />
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
