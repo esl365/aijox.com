@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,8 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
+  const router = useRouter();
+  const { update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
@@ -69,8 +72,11 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       }
 
       if (result?.ok) {
-        // Direct redirect to school dashboard
-        window.location.href = callbackUrl || '/school/dashboard';
+        // Update session to trigger useEffect in LoginPageClient
+        await update();
+        // Use router.push instead of window.location to let LoginPageClient handle redirect
+        router.push(callbackUrl || '/school/dashboard');
+        router.refresh();
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
