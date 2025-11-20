@@ -25,11 +25,8 @@ export default function SignupPage() {
 
       if (result?.error) {
         setError(result.error);
-      } else {
-        // Successful registration - redirect to role selection
-        router.push('/select-role');
-        router.refresh();
       }
+      // If no error, NextAuth will automatically redirect via redirectTo
     });
   };
 

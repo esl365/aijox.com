@@ -25,11 +25,8 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error);
-      } else {
-        // Successful login - redirect to dashboard
-        router.push('/school/dashboard');
-        router.refresh();
       }
+      // If no error, NextAuth will automatically redirect via redirectTo
     });
   };
 

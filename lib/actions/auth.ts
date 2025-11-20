@@ -32,12 +32,15 @@ export async function authenticate(formData: FormData) {
   }
 
   try {
+    // Server Actions must use redirectTo for NextAuth
+    // This will trigger a NEXT_REDIRECT error which is expected
     await signIn('credentials', {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirect: false,
+      redirectTo: '/school/dashboard',
     });
 
+    // This line won't be reached if redirectTo is used
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
@@ -48,6 +51,7 @@ export async function authenticate(formData: FormData) {
           return { error: 'Something went wrong' };
       }
     }
+    // Re-throw NEXT_REDIRECT errors to allow redirect to happen
     throw error;
   }
 }
@@ -92,16 +96,22 @@ export async function register(formData: FormData) {
     });
 
     // Automatically sign in the user after registration
+    // This will trigger a NEXT_REDIRECT error which is expected
     await signIn('credentials', {
       email,
       password,
-      redirect: false,
+      redirectTo: '/select-role',
     });
 
+    // This line won't be reached if redirectTo is used
     return { success: true };
   } catch (error) {
-    console.error('Registration error:', error);
-    return { error: 'Failed to create account' };
+    // If it's an AuthError, return error message
+    if (error instanceof AuthError) {
+      return { error: 'Failed to sign in after registration' };
+    }
+    // Re-throw NEXT_REDIRECT errors to allow redirect to happen
+    throw error;
   }
 }
 
