@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { UserRole } from '@prisma/client';
+import { getDashboardUrl } from '@/lib/utils/routing';
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -88,6 +89,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // If URL is a relative path, prepend baseUrl
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      // If URL is from the same domain, allow it
+      if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      // Otherwise return baseUrl
+      return baseUrl;
+    },
     async jwt({ token, user }) {
       // Initial sign in
       if (user) {
