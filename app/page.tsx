@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe, Users, Briefcase, Sparkles } from 'lucide-react';
+import { Footer } from '@/components/shared/footer';
 
 export default function Home() {
   return (
@@ -17,7 +18,7 @@ export default function Home() {
             <Link href="/jobs">
               <Button variant="ghost">Find Jobs</Button>
             </Link>
-            <Link href="/signin">
+            <Link href="/login">
               <Button variant="outline">Sign In</Button>
             </Link>
             <Link href="/signup">
@@ -131,11 +132,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2025 Global Educator Nexus. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
