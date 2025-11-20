@@ -15,23 +15,11 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma) as any, // Type cast needed for NextAuth v5 beta compatibility
+  adapter: PrismaAdapter(prisma) as any, // Needed for OAuth providers
   trustHost: true, // Required for Vercel deployments
-  secret: process.env.AUTH_SECRET,
   session: {
     strategy: 'jwt', // Use JWT for credentials provider compatibility
     maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  cookies: {
-    sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}authjs.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
   },
   pages: {
     signIn: '/login',
