@@ -56,16 +56,24 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     setError(null);
 
     try {
-      // Use NextAuth's built-in redirect with callbackUrl
-      // This will trigger middleware which handles role-based routing
-      await signIn('credentials', {
+      const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
-        callbackUrl: callbackUrl || '/school/dashboard', // Default to school dashboard for testing
-        redirect: true, // Let NextAuth handle the redirect
+        redirect: false,
       });
+
+      if (result?.error) {
+        setError('Invalid email or password');
+        setIsLoading(false);
+        return;
+      }
+
+      if (result?.ok) {
+        // Direct redirect to school dashboard
+        window.location.href = callbackUrl || '/school/dashboard';
+      }
     } catch (err) {
-      setError('Invalid email or password');
+      setError('Something went wrong. Please try again.');
       console.error('Credentials sign-in error:', err);
       setIsLoading(false);
     }
