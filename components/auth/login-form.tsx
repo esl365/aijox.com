@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +15,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const router = useRouter();
-  const { update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
@@ -59,26 +56,12 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     setError(null);
 
     try {
-      const result = await signIn('credentials', {
+      await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         callbackUrl: callbackUrl || '/school/dashboard',
-        redirect: false,
+        redirect: true,
       });
-
-      if (result?.error) {
-        setError('Invalid email or password');
-        setIsLoading(false);
-        return;
-      }
-
-      if (result?.ok) {
-        // Update session to trigger useEffect in LoginPageClient
-        await update();
-        // Use router.push instead of window.location to let LoginPageClient handle redirect
-        router.push(callbackUrl || '/school/dashboard');
-        router.refresh();
-      }
     } catch (err) {
       setError('Something went wrong. Please try again.');
       console.error('Credentials sign-in error:', err);
