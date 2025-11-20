@@ -62,6 +62,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
+        callbackUrl: callbackUrl || '/school/dashboard',
         redirect: false,
       });
 
