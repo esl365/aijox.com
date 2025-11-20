@@ -56,27 +56,16 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     setError(null);
 
     try {
-      const result = await signIn('credentials', {
+      // Use redirect: true like OAuth providers do
+      await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         callbackUrl: callbackUrl || '/school/dashboard',
-        redirect: false,
+        redirect: true,
       });
-
-      console.log('SignIn result:', result);
-
-      if (result?.error) {
-        console.error('Login error:', result.error);
-        setError('Invalid email or password');
-        setIsLoading(false);
-        return;
-      }
-
-      // If no error, redirect to dashboard
-      console.log('No error, redirecting to:', callbackUrl || '/school/dashboard');
-      window.location.href = callbackUrl || '/school/dashboard';
+      // This line won't be reached if redirect succeeds
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Invalid email or password');
       console.error('Credentials sign-in error:', err);
       setIsLoading(false);
     }
