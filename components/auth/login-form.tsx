@@ -72,9 +72,13 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       }
 
       if (result?.ok) {
-        console.log('Sign in successful, redirecting...');
-        // Manually redirect after successful sign in
-        window.location.href = callbackUrl || '/school/dashboard';
+        console.log('Sign in successful, waiting for session to propagate...');
+        // Wait a bit for session cookie to be fully set in browser
+        // before redirecting to ensure middleware can read it
+        setTimeout(() => {
+          console.log('Redirecting to dashboard now...');
+          window.location.href = callbackUrl || '/school/dashboard';
+        }, 500); // 500ms delay to ensure cookie propagation
       } else {
         console.error('Unexpected result:', result);
         setError('Something went wrong');
