@@ -686,6 +686,14 @@ export async function sendTestJobAlert(
     educationRequirements: "Bachelor's degree in Education or related field",
     experienceRequirements: '2+ years teaching experience preferred',
     applicationUrl: null,
+    // Hybrid job posting fields
+    fullDescriptionHtml: null,
+    rawJobPosting: null,
+    aiExtractionScore: null,
+    aiExtractionErrors: [],
+    requiresReview: false,
+    externalApplicationUrl: null,
+    applicationInstructions: null,
   };
 
   return sendInstantJobAlert(

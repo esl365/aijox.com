@@ -299,6 +299,15 @@ model JobPosting {
   experienceRequirements String?   @db.Text // Detailed experience requirements (supplements requirements field)
   applicationUrl         String?   // Custom application URL (defaults to platform URL)
 
+  // Hybrid Job Posting (AI-assisted creation)
+  fullDescriptionHtml    String?   @db.Text // Original rich text with formatting (for job detail page)
+  rawJobPosting          String?   @db.Text // Original pasted text (backup/source of truth)
+  aiExtractionScore      Float?    // 0.0-1.0 confidence score of AI extraction
+  aiExtractionErrors     String[]  // Fields that AI couldn't extract with confidence
+  requiresReview         Boolean   @default(false) // Flag for manual admin review
+  externalApplicationUrl String?   // External application URL (Google Forms, university website, etc.)
+  applicationInstructions String?  @db.Text // Custom application instructions/steps
+
   // Embeddings (Agent 2)
   embedding          Unsupported("vector(1536)")?
 
@@ -490,4 +499,27 @@ model Review {
   @@index([schoolId])
   @@index([authorId])
   @@index([rating])
+}
+
+// AI Job Extraction Cache (Phase 3)
+model AIExtractionCache {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Source text hash for deduplication
+  textHash String @unique // SHA-256 hash of rawJobPosting
+
+  // Cached extraction result
+  extractedData      Json   // Full extracted fields
+  confidenceScore    Float  // 0.0-1.0
+  warnings           String[] // Extraction warnings
+  extractionModel    String @default("gpt-4o") // Model used
+
+  // Usage tracking
+  hitCount   Int @default(1) // Number of times this cache was used
+  lastUsedAt DateTime @default(now())
+
+  @@index([textHash])
+  @@index([lastUsedAt])
 }

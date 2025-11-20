@@ -273,11 +273,55 @@ export function JobDetailClient({
               <CardTitle>Job Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-line text-muted-foreground">
-                {job.description}
-              </p>
+              {job.fullDescriptionHtml ? (
+                <div
+                  className="prose prose-gray max-w-none"
+                  dangerouslySetInnerHTML={{ __html: job.fullDescriptionHtml }}
+                />
+              ) : (
+                <p className="whitespace-pre-line text-muted-foreground">
+                  {job.description}
+                </p>
+              )}
             </CardContent>
           </Card>
+
+          {/* Application Instructions (if external) */}
+          {(job.externalApplicationUrl || job.applicationInstructions) && (
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Application Instructions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {job.applicationInstructions && (
+                  <div className="whitespace-pre-line text-sm">
+                    {job.applicationInstructions}
+                  </div>
+                )}
+                {job.externalApplicationUrl && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">
+                      Please apply via the school's application portal:
+                    </p>
+                    <Button asChild className="w-full sm:w-auto">
+                      <a
+                        href={job.externalApplicationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Apply via External Link →
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Requirements */}
           <Card>
