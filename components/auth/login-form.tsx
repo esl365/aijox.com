@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
+import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,21 +10,31 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { authenticate } from '@/app/actions/auth';
 
 interface LoginFormProps {
   callbackUrl?: string;
 }
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button
+      type="submit"
+      className="w-full"
+      disabled={pending}
+    >
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      Sign in
+    </Button>
+  );
+}
+
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLinkedInLoading, setIsLinkedInLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
 
   const handleOAuthSignIn = async (provider: 'google' | 'linkedin') => {
     try {
@@ -32,14 +43,12 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
       } else {
         setIsLinkedInLoading(true);
       }
-      setError(null);
 
       await signIn(provider, {
         callbackUrl: callbackUrl || '/',
         redirect: true,
       });
     } catch (err) {
-      setError('Failed to sign in. Please try again.');
       console.error('OAuth sign-in error:', err);
     } finally {
       if (provider === 'google') {
@@ -50,26 +59,6 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     }
   };
 
-  const handleCredentialsSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Use redirect: true like OAuth providers do
-      await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        callbackUrl: callbackUrl || '/school/dashboard',
-        redirect: true,
-      });
-      // This line won't be reached if redirect succeeds
-    } catch (err) {
-      setError('Invalid email or password');
-      console.error('Credentials sign-in error:', err);
-      setIsLoading(false);
-    }
-  };
 
   return (
     <Card>
@@ -80,9 +69,9 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error && (
+        {errorMessage && (
           <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}
 
@@ -150,19 +139,16 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </div>
 
         {/* Email/Password Form */}
-        <form onSubmit={handleCredentialsSignIn} className="space-y-4">
+        <form action={dispatch} className="space-y-4">
+          <input type="hidden" name="callbackUrl" value={callbackUrl || '/school/dashboard'} />
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="john@example.com"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
               required
-              disabled={isLoading}
             />
           </div>
 
@@ -178,25 +164,14 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
             </div>
             <Input
               id="password"
+              name="password"
               type="password"
               placeholder="••••••••••"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
               required
-              disabled={isLoading}
             />
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading || isGoogleLoading || isLinkedInLoading}
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
-          </Button>
+          <SubmitButton />
         </form>
       </CardContent>
 
