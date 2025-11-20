@@ -1,6 +1,6 @@
 'use server';
 
-import { signIn, auth } from '@/lib/auth';
+import { signIn } from '@/lib/auth';
 import { AuthError } from 'next-auth';
 import { redirect } from 'next/navigation';
 
@@ -24,22 +24,15 @@ export async function authenticate(
 
     console.log('[Server Action] Sign in result:', result);
 
-    // If sign in was successful, check session and redirect
+    // Check for errors
     if (result?.error) {
       console.error('[Server Action] Sign in failed:', result.error);
       return 'Invalid credentials.';
     }
 
-    // Verify session was created
-    const session = await auth();
-    console.log('[Server Action] Session after sign in:', session?.user?.email);
-
-    if (!session?.user) {
-      return 'Failed to create session.';
-    }
-
-    // Session is valid, perform server-side redirect
-    console.log('[Server Action] Redirecting to:', callbackUrl || '/school/dashboard');
+    // Sign in successful - session cookie is set
+    // Perform server-side redirect (cookie will be included in response)
+    console.log('[Server Action] Sign in successful, redirecting to:', callbackUrl || '/school/dashboard');
     redirect(callbackUrl || '/school/dashboard');
   } catch (error) {
     console.error('[Server Action] Error during sign in:', error);
