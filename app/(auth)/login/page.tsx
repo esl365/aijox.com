@@ -21,11 +21,11 @@ export default function LoginPage() {
     const password = formData.get('password') as string;
 
     startTransition(async () => {
-      // Let NextAuth handle the redirect automatically
+      // Let middleware handle role-based redirect after login
       await signIn('credentials', {
         email,
         password,
-        callbackUrl: '/school/dashboard',
+        callbackUrl: '/',
       });
     });
   };
