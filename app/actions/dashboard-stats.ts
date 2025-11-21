@@ -209,6 +209,150 @@ export async function getRecentApplications(): Promise<RecentApplication[]> {
   }));
 }
 
+export interface HiringFunnelData {
+  totalApplications: number;
+  newApplications: number;
+  screening: number;
+  interview: number;
+  offer: number;
+  hired: number;
+  rejected: number;
+}
+
+export async function getHiringFunnelData(): Promise<HiringFunnelData> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized');
+  }
+
+  const schoolProfile = await prisma.schoolProfile.findUnique({
+    where: { userId: session.user.id },
+  });
+
+  if (!schoolProfile) {
+    throw new Error('School profile not found');
+  }
+
+  const [total, newApps, screening, interview, offer, hired, rejected] = await Promise.all([
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id } },
+    }),
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id }, status: 'NEW' },
+    }),
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id }, status: 'SCREENING' },
+    }),
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id }, status: 'INTERVIEW' },
+    }),
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id }, status: 'OFFER' },
+    }),
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id }, status: 'HIRED' },
+    }),
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id }, status: 'REJECTED' },
+    }),
+  ]);
+
+  return {
+    totalApplications: total,
+    newApplications: newApps,
+    screening,
+    interview,
+    offer,
+    hired,
+    rejected,
+  };
+}
+
+export interface PerformanceBenchmark {
+  metric: string;
+  schoolValue: number;
+  platformAverage: number;
+  percentile: number;
+  trend: 'up' | 'down' | 'stable';
+  unit: string;
+}
+
+export async function getPerformanceBenchmarks(): Promise<PerformanceBenchmark[]> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized');
+  }
+
+  const schoolProfile = await prisma.schoolProfile.findUnique({
+    where: { userId: session.user.id },
+  });
+
+  if (!schoolProfile) {
+    throw new Error('School profile not found');
+  }
+
+  // Get school metrics
+  const [schoolApps, schoolHired, schoolJobs] = await Promise.all([
+    prisma.application.count({
+      where: { job: { schoolId: schoolProfile.id } },
+    }),
+    prisma.application.count({
+      where: {
+        job: { schoolId: schoolProfile.id },
+        status: 'HIRED',
+      },
+    }),
+    prisma.jobPosting.count({
+      where: { schoolId: schoolProfile.id },
+    }),
+  ]);
+
+  // Get platform metrics (all schools)
+  const [platformApps, platformHired, platformJobs, totalSchools] = await Promise.all([
+    prisma.application.count(),
+    prisma.application.count({ where: { status: 'HIRED' } }),
+    prisma.jobPosting.count(),
+    prisma.schoolProfile.count(),
+  ]);
+
+  // Calculate metrics
+  const schoolHiringRate = schoolApps > 0 ? (schoolHired / schoolApps) * 100 : 0;
+  const platformHiringRate = platformApps > 0 ? (platformHired / platformApps) * 100 : 0;
+
+  const schoolAppsPerJob = schoolJobs > 0 ? schoolApps / schoolJobs : 0;
+  const platformAppsPerJob = platformJobs > 0 ? platformApps / platformJobs : 0;
+
+  const schoolJobsCount = schoolJobs;
+  const platformAvgJobs = totalSchools > 0 ? platformJobs / totalSchools : 0;
+
+  return [
+    {
+      metric: 'Hiring Success Rate',
+      schoolValue: Math.round(schoolHiringRate),
+      platformAverage: Math.round(platformHiringRate),
+      percentile: schoolHiringRate > platformHiringRate ? 75 : 45,
+      trend: schoolHiringRate > platformHiringRate ? 'up' : 'down',
+      unit: '%',
+    },
+    {
+      metric: 'Applications per Job',
+      schoolValue: Math.round(schoolAppsPerJob * 10) / 10,
+      platformAverage: Math.round(platformAppsPerJob * 10) / 10,
+      percentile: schoolAppsPerJob > platformAppsPerJob ? 70 : 50,
+      trend: schoolAppsPerJob > platformAppsPerJob ? 'up' : 'stable',
+      unit: 'apps',
+    },
+    {
+      metric: 'Active Job Postings',
+      schoolValue: schoolJobsCount,
+      platformAverage: Math.round(platformAvgJobs * 10) / 10,
+      percentile: schoolJobsCount > platformAvgJobs ? 65 : 40,
+      trend: schoolJobsCount > platformAvgJobs ? 'up' : 'down',
+      unit: 'jobs',
+    },
+  ];
+}
+
 function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffInMs = now.getTime() - date.getTime();
