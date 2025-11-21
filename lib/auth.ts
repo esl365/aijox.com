@@ -131,12 +131,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
 
-        // Check if user has completed profile setup
-        const hasProfile = await checkProfileCompletion(
-          token.id as string,
-          token.role as string
-        );
-        session.user.hasProfile = hasProfile;
+        // NOTE: Cannot check profile completion here because this runs on edge runtime
+        // and Prisma Client doesn't work on edge. Profile checks should be done
+        // in server components or API routes where needed.
+        // Setting hasProfile to true for now to allow navigation.
+        session.user.hasProfile = true;
       }
       return session;
     },
