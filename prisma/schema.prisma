@@ -114,6 +114,7 @@ model User {
   candidateRatingsAssigned CandidateRating[]
   dashboardLayout  DashboardLayout?
   savedFilters     SavedFilter[]
+  reports          Report[]
 }
 
 // Teacher Profile (The Asset)
@@ -239,6 +240,11 @@ model SchoolProfile {
   reviews     Review[]
   alerts      Alert[]
   activities  Activity[]
+  analyticsPredictions AnalyticsPrediction[]
+  reports              Report[]
+  emailTemplates       EmailTemplate[]
+  emailAutomations     EmailAutomation[]
+  emailLogs            EmailLog[]
 }
 
 // Recruiter Profile
@@ -331,6 +337,7 @@ model JobPosting {
   applications Application[]
   matchNotifications MatchNotification[]
   reviews     Review[]
+  analyticsPredictions AnalyticsPrediction[]
 
   @@index([status, country])
   @@index([subject])
@@ -377,6 +384,7 @@ model Application {
   interviews Interview[]
   notes      CandidateNote[]
   rating     CandidateRating?
+  emailLogs  EmailLog[]
 
   @@unique([jobId, teacherId])
   @@index([status])
@@ -732,4 +740,150 @@ model SavedFilter {
 
   @@index([userId])
   @@index([isDefault])
+}
+
+// P2 Features: Predictive Analytics & Advanced Reports
+
+// Analytics Prediction
+model AnalyticsPrediction {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      SchoolProfile @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  jobId       String?
+  job         JobPosting? @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  predictionType String // TIME_TO_HIRE, ACCEPTANCE_PROBABILITY, ENGAGEMENT_SCORE, etc.
+  predictionValue Float
+  confidence      Float  // 0-1
+
+  metadata    Json?    // Additional prediction data
+
+  validUntil  DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([schoolId])
+  @@index([jobId])
+  @@index([predictionType])
+  @@index([validUntil])
+}
+
+// Custom Reports
+model Report {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      SchoolProfile @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+
+  name        String
+  description String?
+  reportType  String   // APPLICATIONS, DIVERSITY, SOURCE_EFFECTIVENESS, CUSTOM
+
+  config      Json     // Report configuration (filters, grouping, metrics)
+
+  isScheduled Boolean  @default(false)
+  scheduleFrequency String? // DAILY, WEEKLY, MONTHLY
+  scheduleDay       Int?    // Day of week/month
+  scheduleTime      String? // HH:MM
+
+  lastGeneratedAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([createdById])
+  @@index([isScheduled])
+}
+
+// Email Templates
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      SchoolProfile @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  name        String
+  subject     String
+  body        String   @db.Text
+
+  templateType String  // REJECTION, INTERVIEW_INVITE, OFFER, ACKNOWLEDGMENT, CUSTOM
+
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+
+  // Personalization tokens: {candidate.name}, {job.title}, {school.name}, etc.
+
+  automations EmailAutomation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([templateType])
+  @@index([isActive])
+}
+
+// Email Automation Rules
+model EmailAutomation {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      SchoolProfile @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  trigger     String   // NEW_APPLICATION, STATUS_CHANGE, INTERVIEW_SCHEDULED, etc.
+  triggerConditions Json? // Additional conditions
+
+  templateId  String
+  template    EmailTemplate @relation(fields: [templateId], references: [id])
+
+  delayMinutes Int     @default(0) // Delay before sending
+
+  isActive    Boolean  @default(true)
+
+  sentCount   Int      @default(0)
+  lastSentAt  DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([trigger])
+  @@index([isActive])
+}
+
+// Email Logs
+model EmailLog {
+  id             String   @id @default(cuid())
+  schoolId       String
+  school         SchoolProfile @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  recipientEmail String
+  recipientName  String?
+
+  subject        String
+  body           String   @db.Text
+
+  templateId     String?
+  automationId   String?
+
+  applicationId  String?
+  application    Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  status         String   // QUEUED, SENT, FAILED, BOUNCED
+  errorMessage   String?
+
+  sentAt         DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+
+  createdAt      DateTime @default(now())
+
+  @@index([schoolId])
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([createdAt])
 }

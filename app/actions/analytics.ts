@@ -489,3 +489,492 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics | null> {
     topCountries,
   };
 }
+
+// ============================================================================
+// P2 Features: Predictive Analytics
+// ============================================================================
+
+export type PredictionType =
+  | 'TIME_TO_HIRE'
+  | 'ACCEPTANCE_PROBABILITY'
+  | 'ENGAGEMENT_SCORE'
+  | 'APPLICATION_VOLUME'
+  | 'QUALITY_SCORE';
+
+/**
+ * Get all analytics predictions for a school
+ */
+export async function getAnalyticsPredictions(jobId?: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || session.user.role !== 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Unauthorized',
+        predictions: []
+      };
+    }
+
+    const schoolProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+
+    if (!schoolProfile) {
+      return {
+        success: false,
+        error: 'School profile not found',
+        predictions: []
+      };
+    }
+
+    const where: any = {
+      schoolId: schoolProfile.id,
+      validUntil: {
+        gte: new Date() // Only get valid predictions
+      }
+    };
+
+    if (jobId) {
+      where.jobId = jobId;
+    }
+
+    const predictions = await prisma.analyticsPrediction.findMany({
+      where,
+      include: {
+        job: {
+          select: {
+            title: true,
+            city: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return {
+      success: true,
+      predictions
+    };
+
+  } catch (error: any) {
+    console.error('Failed to get analytics predictions:', error);
+    return {
+      success: false,
+      error: error.message,
+      predictions: []
+    };
+  }
+}
+
+/**
+ * Create a new prediction
+ */
+export async function createPrediction(
+  predictionType: PredictionType,
+  predictionValue: number,
+  confidence: number,
+  validDays: number = 30,
+  jobId?: string,
+  metadata?: any
+) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || session.user.role !== 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Unauthorized'
+      };
+    }
+
+    const schoolProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+
+    if (!schoolProfile) {
+      return {
+        success: false,
+        error: 'School profile not found'
+      };
+    }
+
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + validDays);
+
+    const prediction = await prisma.analyticsPrediction.create({
+      data: {
+        schoolId: schoolProfile.id,
+        jobId,
+        predictionType,
+        predictionValue,
+        confidence,
+        validUntil,
+        metadata: metadata as any
+      },
+      include: {
+        job: {
+          select: {
+            title: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      prediction
+    };
+
+  } catch (error: any) {
+    console.error('Failed to create prediction:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Calculate time-to-hire prediction for a job
+ */
+export async function predictTimeToHire(jobId: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || session.user.role !== 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Unauthorized'
+      };
+    }
+
+    const schoolProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+
+    if (!schoolProfile) {
+      return {
+        success: false,
+        error: 'School profile not found'
+      };
+    }
+
+    // Get historical data for this school
+    const hiredApplications = await prisma.application.findMany({
+      where: {
+        job: {
+          schoolId: schoolProfile.id
+        },
+        status: 'HIRED',
+        hiredAt: {
+          not: null
+        }
+      },
+      select: {
+        createdAt: true,
+        hiredAt: true
+      }
+    });
+
+    if (hiredApplications.length === 0) {
+      // No historical data, use industry average
+      const prediction = await createPrediction(
+        'TIME_TO_HIRE',
+        45, // 45 days industry average
+        0.5, // Low confidence
+        30,
+        jobId,
+        { note: 'Based on industry average due to lack of historical data' }
+      );
+
+      return prediction;
+    }
+
+    // Calculate average time-to-hire in days
+    const totalDays = hiredApplications.reduce((sum, app) => {
+      if (!app.hiredAt) return sum;
+      const days = Math.floor((app.hiredAt.getTime() - app.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      return sum + days;
+    }, 0);
+
+    const averageDays = totalDays / hiredApplications.length;
+    const confidence = Math.min(0.95, 0.5 + (hiredApplications.length / 100)); // Increase confidence with more data
+
+    const prediction = await createPrediction(
+      'TIME_TO_HIRE',
+      averageDays,
+      confidence,
+      30,
+      jobId,
+      {
+        historicalHires: hiredApplications.length,
+        minDays: Math.min(...hiredApplications.map(app => {
+          if (!app.hiredAt) return Infinity;
+          return Math.floor((app.hiredAt.getTime() - app.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        })),
+        maxDays: Math.max(...hiredApplications.map(app => {
+          if (!app.hiredAt) return 0;
+          return Math.floor((app.hiredAt.getTime() - app.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        }))
+      }
+    );
+
+    return prediction;
+
+  } catch (error: any) {
+    console.error('Failed to predict time-to-hire:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Calculate acceptance probability for candidates
+ */
+export async function predictAcceptanceProbability(jobId: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || session.user.role !== 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Unauthorized'
+      };
+    }
+
+    const schoolProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+
+    if (!schoolProfile) {
+      return {
+        success: false,
+        error: 'School profile not found'
+      };
+    }
+
+    // Get offer acceptance rate
+    const offers = await prisma.application.findMany({
+      where: {
+        job: {
+          schoolId: schoolProfile.id
+        },
+        status: {
+          in: ['OFFER', 'HIRED', 'REJECTED']
+        },
+        offeredAt: {
+          not: null
+        }
+      },
+      select: {
+        status: true,
+        offeredAt: true,
+        hiredAt: true
+      }
+    });
+
+    if (offers.length === 0) {
+      // No historical data, use industry average
+      const prediction = await createPrediction(
+        'ACCEPTANCE_PROBABILITY',
+        0.65, // 65% industry average
+        0.5,
+        30,
+        jobId,
+        { note: 'Based on industry average due to lack of historical data' }
+      );
+
+      return prediction;
+    }
+
+    const acceptedOffers = offers.filter(app => app.status === 'HIRED').length;
+    const acceptanceRate = acceptedOffers / offers.length;
+    const confidence = Math.min(0.95, 0.5 + (offers.length / 100));
+
+    const prediction = await createPrediction(
+      'ACCEPTANCE_PROBABILITY',
+      acceptanceRate,
+      confidence,
+      30,
+      jobId,
+      {
+        totalOffers: offers.length,
+        acceptedOffers,
+        rejectedOffers: offers.filter(app => app.status === 'REJECTED' && app.offeredAt).length
+      }
+    );
+
+    return prediction;
+
+  } catch (error: any) {
+    console.error('Failed to predict acceptance probability:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Calculate engagement score prediction
+ */
+export async function predictEngagementScore() {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || session.user.role !== 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Unauthorized'
+      };
+    }
+
+    const schoolProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+
+    if (!schoolProfile) {
+      return {
+        success: false,
+        error: 'School profile not found'
+      };
+    }
+
+    // Get application response metrics
+    const recentApplications = await prisma.application.findMany({
+      where: {
+        job: {
+          schoolId: schoolProfile.id
+        },
+        createdAt: {
+          gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
+        }
+      },
+      select: {
+        createdAt: true,
+        viewedAt: true,
+        screenedAt: true,
+        status: true
+      }
+    });
+
+    if (recentApplications.length === 0) {
+      const prediction = await createPrediction(
+        'ENGAGEMENT_SCORE',
+        0.5, // 50% baseline
+        0.3,
+        30,
+        undefined,
+        { note: 'Insufficient data for accurate prediction' }
+      );
+
+      return prediction;
+    }
+
+    // Calculate engagement metrics
+    const viewedApps = recentApplications.filter(app => app.viewedAt).length;
+    const screenedApps = recentApplications.filter(app => app.screenedAt).length;
+    const activeApps = recentApplications.filter(app =>
+      ['SCREENING', 'INTERVIEW', 'OFFER'].includes(app.status)
+    ).length;
+
+    const viewRate = viewedApps / recentApplications.length;
+    const screenRate = screenedApps / recentApplications.length;
+    const activeRate = activeApps / recentApplications.length;
+
+    // Weighted engagement score
+    const engagementScore = (viewRate * 0.3) + (screenRate * 0.4) + (activeRate * 0.3);
+    const confidence = Math.min(0.95, 0.6 + (recentApplications.length / 200));
+
+    const prediction = await createPrediction(
+      'ENGAGEMENT_SCORE',
+      engagementScore,
+      confidence,
+      30,
+      undefined,
+      {
+        totalApplications: recentApplications.length,
+        viewRate,
+        screenRate,
+        activeRate
+      }
+    );
+
+    return prediction;
+
+  } catch (error: any) {
+    console.error('Failed to predict engagement score:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Get analytics dashboard summary
+ */
+export async function getAnalyticsSummary() {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || session.user.role !== 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Unauthorized',
+        summary: null
+      };
+    }
+
+    const schoolProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+
+    if (!schoolProfile) {
+      return {
+        success: false,
+        error: 'School profile not found',
+        summary: null
+      };
+    }
+
+    // Get latest predictions of each type
+    const predictions = await prisma.analyticsPrediction.findMany({
+      where: {
+        schoolId: schoolProfile.id,
+        validUntil: {
+          gte: new Date()
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 20
+    });
+
+    const summary = {
+      timeToHire: predictions.find(p => p.predictionType === 'TIME_TO_HIRE'),
+      acceptanceProbability: predictions.find(p => p.predictionType === 'ACCEPTANCE_PROBABILITY'),
+      engagementScore: predictions.find(p => p.predictionType === 'ENGAGEMENT_SCORE'),
+      totalPredictions: predictions.length
+    };
+
+    return {
+      success: true,
+      summary
+    };
+
+  } catch (error: any) {
+    console.error('Failed to get analytics summary:', error);
+    return {
+      success: false,
+      error: error.message,
+      summary: null
+    };
+  }
+}
