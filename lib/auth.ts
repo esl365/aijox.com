@@ -15,7 +15,9 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma) as any, // Needed for OAuth providers
+  // NOTE: adapter is removed because we use JWT strategy
+  // Adapter conflicts with JWT strategy - causes session not to persist
+  // We'll add OAuth support later with proper adapter configuration
   trustHost: true, // Required for Vercel deployments
   session: {
     strategy: 'jwt', // Use JWT for credentials provider compatibility
@@ -29,28 +31,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     newUser: '/select-role', // Redirect new users to role selection
   },
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          prompt: 'consent',
-          access_type: 'offline',
-          response_type: 'code',
-        },
-      },
-    }),
-    LinkedIn({
-      clientId: process.env.LINKEDIN_CLIENT_ID,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          scope: 'openid profile email',
-        },
-      },
-    }),
+    // OAuth providers temporarily disabled until we set up proper adapter configuration
+    // Google({
+    //   clientId: process.env.GOOGLE_CLIENT_ID,
+    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    //   allowDangerousEmailAccountLinking: true,
+    //   authorization: {
+    //     params: {
+    //       prompt: 'consent',
+    //       access_type: 'offline',
+    //       response_type: 'code',
+    //     },
+    //   },
+    // }),
+    // LinkedIn({
+    //   clientId: process.env.LINKEDIN_CLIENT_ID,
+    //   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+    //   allowDangerousEmailAccountLinking: true,
+    //   authorization: {
+    //     params: {
+    //       scope: 'openid profile email',
+    //     },
+    //   },
+    // }),
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
