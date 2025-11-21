@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LogoutButton } from '@/components/ui/logout-button';
-import { Briefcase, Users, Eye, MessageSquare, TrendingUp, Plus, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Briefcase, Users, Eye, MessageSquare, TrendingUp, Plus, ArrowUp, ArrowDown, Minus, Mail, BarChart3 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'School Dashboard',
@@ -111,6 +111,54 @@ export default async function SchoolDashboardPage() {
             <LogoutButton />
           </div>
         </div>
+
+        {/* P2 Features: Quick Navigation */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Advanced Features</CardTitle>
+            <CardDescription>Access predictive analytics, reports, and email automation</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-4 gap-4">
+              <Link href="/school/analytics" className="block">
+                <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4">
+                  <TrendingUp className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-semibold">Analytics</div>
+                    <div className="text-xs text-muted-foreground">Predictive insights</div>
+                  </div>
+                </Button>
+              </Link>
+              <Link href="/school/reports" className="block">
+                <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4">
+                  <BarChart3 className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-semibold">Reports</div>
+                    <div className="text-xs text-muted-foreground">Custom analytics</div>
+                  </div>
+                </Button>
+              </Link>
+              <Link href="/school/email-templates" className="block">
+                <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4">
+                  <Mail className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-semibold">Templates</div>
+                    <div className="text-xs text-muted-foreground">Email templates</div>
+                  </div>
+                </Button>
+              </Link>
+              <Link href="/school/email-automation" className="block">
+                <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4">
+                  <MessageSquare className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-semibold">Automation</div>
+                    <div className="text-xs text-muted-foreground">Email workflows</div>
+                  </div>
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* P0 Dashboard Enhancement: 3-Column Layout */}
         <div className="grid lg:grid-cols-[350px_1fr_350px] gap-6">
