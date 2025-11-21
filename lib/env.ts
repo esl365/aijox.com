@@ -23,11 +23,13 @@ const envSchema = z.object({
   OPENAI_API_KEY: z
     .string()
     .startsWith('sk-', 'OPENAI_API_KEY must start with sk-')
-    .min(20, 'OPENAI_API_KEY appears invalid'),
+    .min(20, 'OPENAI_API_KEY appears invalid')
+    .optional(),
   ANTHROPIC_API_KEY: z
     .string()
     .startsWith('sk-ant-', 'ANTHROPIC_API_KEY must start with sk-ant-')
-    .min(20, 'ANTHROPIC_API_KEY appears invalid'),
+    .min(20, 'ANTHROPIC_API_KEY appears invalid')
+    .optional(),
 
   // Cloudflare R2
   R2_ACCOUNT_ID: z.string().min(1, 'R2_ACCOUNT_ID is required'),
@@ -66,6 +68,10 @@ const envSchema = z.object({
     .transform((val) => val === 'true')
     .default('true'),
 })
+  .refine(
+    (data) => data.OPENAI_API_KEY || data.ANTHROPIC_API_KEY,
+    'At least one AI provider key is required: set OPENAI_API_KEY or ANTHROPIC_API_KEY.'
+  )
 
 // Type-safe environment variables
 export type Env = z.infer<typeof envSchema>
