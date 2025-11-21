@@ -19,13 +19,20 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
+      console.log('Calling authenticate...');
       const result = await authenticate(formData);
+      console.log('Authenticate result:', result);
 
       if (result?.error) {
+        console.log('Got error:', result.error);
         setError(result.error);
       } else if (result?.success) {
+        console.log('Login successful, redirecting...');
         // Use window.location.href to ensure cookies are properly set
         window.location.href = '/school/dashboard';
+      } else {
+        console.log('Unexpected result:', result);
+        setError('Unexpected response from server');
       }
     });
   };
