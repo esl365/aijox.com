@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getTeacherDashboard, getRecommendedJobs } from '@/app/actions/dashboard';
+import { getDashboardUrl } from '@/lib/utils/routing';
 import { DashboardClient } from './DashboardClient';
 
 export const metadata: Metadata = {
@@ -17,7 +18,8 @@ export default async function DashboardPage() {
   }
 
   if (session.user.role !== 'TEACHER') {
-    redirect('/');
+    // Redirect non-TEACHER users to their role-specific dashboard
+    redirect(getDashboardUrl(session.user.role));
   }
 
   const [dashboardData, recommendedJobs] = await Promise.all([
