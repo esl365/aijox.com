@@ -30,8 +30,8 @@ export default auth((req) => {
     if (!userRole) {
       return NextResponse.redirect(new URL('/select-role', nextUrl));
     }
-    // If has role but no profile, redirect to setup (except SCHOOL - they have auto-creation in dashboard)
-    if (!hasProfile && userRole !== 'SCHOOL') {
+    // If has role but no profile, redirect to setup (except SCHOOL and ADMIN)
+    if (!hasProfile && userRole !== 'SCHOOL' && userRole !== 'ADMIN') {
       return NextResponse.redirect(new URL(getSetupUrl(userRole, 'select-role'), nextUrl));
     }
     // Otherwise go to dashboard
@@ -40,8 +40,8 @@ export default auth((req) => {
 
   // Redirect logged-in users from home page to their dashboard
   if (isLoggedIn && nextUrl.pathname === '/' && userRole) {
-    // School users can go to dashboard even without profile (auto-creation there)
-    if (userRole === 'SCHOOL' || hasProfile) {
+    // School and Admin users can go to dashboard even without profile
+    if (userRole === 'SCHOOL' || userRole === 'ADMIN' || hasProfile) {
       return NextResponse.redirect(new URL(getDashboardUrl(userRole), nextUrl));
     }
     // Other users need to complete profile first
@@ -68,8 +68,8 @@ export default auth((req) => {
     return NextResponse.redirect(new URL('/select-role', nextUrl));
   }
 
-  // If logged in with role but no profile, force profile setup (except SCHOOL - they have auto-creation)
-  if (isLoggedIn && userRole && !hasProfile && !isSetupRoute && userRole !== 'SCHOOL') {
+  // If logged in with role but no profile, force profile setup (except SCHOOL and ADMIN)
+  if (isLoggedIn && userRole && !hasProfile && !isSetupRoute && userRole !== 'SCHOOL' && userRole !== 'ADMIN') {
     return NextResponse.redirect(new URL(getSetupUrl(userRole, 'select-role'), nextUrl));
   }
 
