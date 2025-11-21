@@ -21,24 +21,12 @@ export default function LoginPage() {
     const password = formData.get('password') as string;
 
     startTransition(async () => {
-      console.log('Calling signIn...');
-      const result = await signIn('credentials', {
+      // Let NextAuth handle the redirect automatically
+      await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        callbackUrl: '/school/dashboard',
       });
-      console.log('SignIn result:', result);
-
-      if (result?.error) {
-        console.log('Got error:', result.error);
-        setError('Invalid email or password');
-      } else if (result?.ok) {
-        console.log('Login successful, redirecting...');
-        window.location.href = '/school/dashboard';
-      } else {
-        console.log('Unexpected result:', result);
-        setError('Unexpected response from server');
-      }
     });
   };
 
