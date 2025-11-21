@@ -110,6 +110,10 @@ model User {
   schoolProfile    SchoolProfile?
   aiUsage          AIUsage[]
   interviews       Interview[]
+  candidateNotes   CandidateNote[]
+  candidateRatingsAssigned CandidateRating[]
+  dashboardLayout  DashboardLayout?
+  savedFilters     SavedFilter[]
 }
 
 // Teacher Profile (The Asset)
@@ -371,6 +375,8 @@ model Application {
   job     JobPosting     @relation(fields: [jobId], references: [id], onDelete: Cascade)
   teacher TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   interviews Interview[]
+  notes      CandidateNote[]
+  rating     CandidateRating?
 
   @@unique([jobId, teacherId])
   @@index([status])
@@ -655,4 +661,75 @@ model Interview {
   @@index([scheduledAt])
   @@index([status])
   @@index([interviewerId])
+}
+
+// P1 Features: Internal Collaboration & Advanced Filtering
+
+// Internal Notes on Candidates
+model CandidateNote {
+  id            String   @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  authorId      String
+  author        User @relation(fields: [authorId], references: [id])
+
+  content       String   @db.Text
+  isInternal    Boolean  @default(true) // Private notes
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([applicationId])
+  @@index([authorId])
+}
+
+// Candidate Ratings & Tags
+model CandidateRating {
+  id            String   @id @default(cuid())
+  applicationId String   @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  rating        Int      // 1-5 stars
+  tags          String[] // ["Top Pick", "Culture Fit", "Maybe Later"]
+
+  assignedToId  String?
+  assignedTo    User?    @relation(fields: [assignedToId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([applicationId])
+  @@index([assignedToId])
+  @@index([rating])
+}
+
+// Customizable Dashboard Layout
+model DashboardLayout {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  layoutName  String   @default("Default")
+  config      Json     // Grid layout configuration
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Saved Filters
+model SavedFilter {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name         String
+  filterConfig Json     // Filter criteria
+  isDefault    Boolean  @default(false)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isDefault])
 }

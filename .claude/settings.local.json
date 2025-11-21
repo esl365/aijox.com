@@ -44,7 +44,11 @@
       "Bash(npm uninstall:*)",
       "Bash(npx better-auth:*)",
       "Bash(npm run dev:*)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "WebSearch",
+      "Bash(powershell -Command \"Get-Content ''C:\\aijobx\\specification\\Completion.md'' | Select-Object -Last 100\")",
+      "Bash(powershell -Command \"(Get-Content ''C:\\aijobx\\prisma\\schema.prisma'' | Measure-Object -Line).Lines\")",
+      "Bash(powershell -Command \"Get-Content ''C:\\aijobx\\prisma\\schema.prisma'' | Select-Object -Last 40\")"
     ],
     "deny": [],
     "ask": []
