@@ -95,12 +95,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         console.log('[AUTH] Authentication successful for:', user.email);
+
+        // Fetch profile IDs based on role
+        let teacherProfileId: string | undefined;
+        let schoolProfileId: string | undefined;
+        let recruiterProfileId: string | undefined;
+
+        if (user.role === 'TEACHER') {
+          const teacherProfile = await prisma.teacherProfile.findUnique({
+            where: { userId: user.id },
+            select: { id: true },
+          });
+          teacherProfileId = teacherProfile?.id;
+        } else if (user.role === 'SCHOOL') {
+          const schoolProfile = await prisma.schoolProfile.findUnique({
+            where: { userId: user.id },
+            select: { id: true },
+          });
+          schoolProfileId = schoolProfile?.id;
+        } else if (user.role === 'RECRUITER') {
+          const recruiterProfile = await prisma.recruiterProfile.findUnique({
+            where: { userId: user.id },
+            select: { id: true },
+          });
+          recruiterProfileId = recruiterProfile?.id;
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
           role: user.role,
+          teacherProfileId,
+          schoolProfileId,
+          recruiterProfileId,
         };
       },
     }),
@@ -123,6 +152,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id as string;
         token.role = user.role as UserRole;
+        token.teacherProfileId = user.teacherProfileId;
+        token.schoolProfileId = user.schoolProfileId;
+        token.recruiterProfileId = user.recruiterProfileId;
       }
       return token;
     },
@@ -130,6 +162,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
+        session.user.teacherProfileId = token.teacherProfileId;
+        session.user.schoolProfileId = token.schoolProfileId;
+        session.user.recruiterProfileId = token.recruiterProfileId;
 
         // NOTE: Cannot check profile completion here because this runs on edge runtime
         // and Prisma Client doesn't work on edge. Profile checks should be done
