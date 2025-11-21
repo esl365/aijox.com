@@ -109,6 +109,7 @@ model User {
   recruiterProfile RecruiterProfile?
   schoolProfile    SchoolProfile?
   aiUsage          AIUsage[]
+  interviews       Interview[]
 }
 
 // Teacher Profile (The Asset)
@@ -232,6 +233,8 @@ model SchoolProfile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobPostings JobPosting[]
   reviews     Review[]
+  alerts      Alert[]
+  activities  Activity[]
 }
 
 // Recruiter Profile
@@ -367,6 +370,7 @@ model Application {
   // Relations
   job     JobPosting     @relation(fields: [jobId], references: [id], onDelete: Cascade)
   teacher TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  interviews Interview[]
 
   @@unique([jobId, teacherId])
   @@index([status])
@@ -522,4 +526,133 @@ model AIExtractionCache {
 
   @@index([textHash])
   @@index([lastUsedAt])
+}
+
+// Dashboard Enhancement Models (P0 Features)
+
+// Smart Alerts for Schools
+enum AlertType {
+  URGENT
+  TODAY
+  THIS_WEEK
+  INFO
+}
+
+enum AlertCategory {
+  APPLICATION
+  INTERVIEW
+  JOB
+  DEADLINE
+  SYSTEM
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      SchoolProfile @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  type        AlertType
+  category    AlertCategory
+  title       String
+  description String   @db.Text
+  actionLabel String?
+  actionHref  String?
+
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Optional relations
+  jobId         String?
+  applicationId String?
+
+  @@index([schoolId, read, createdAt])
+  @@index([type])
+  @@index([category])
+}
+
+// Activity Feed for Real-time Updates
+enum ActivityType {
+  APPLICATION_RECEIVED
+  APPLICATION_APPROVED
+  APPLICATION_REJECTED
+  APPLICATION_SHORTLISTED
+  MESSAGE_SENT
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  JOB_POSTED
+  JOB_UPDATED
+  JOB_EXPIRED
+  CANDIDATE_HIRED
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      SchoolProfile @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  type        ActivityType
+  title       String
+  description String   @db.Text
+  metadata    Json?
+
+  // Optional relations
+  jobId         String?
+  applicationId String?
+  userId        String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([schoolId, createdAt])
+  @@index([type])
+}
+
+// Interview Scheduling
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_SHOW
+}
+
+enum InterviewType {
+  PHONE
+  VIDEO
+  IN_PERSON
+  ASSESSMENT
+}
+
+model Interview {
+  id            String   @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  scheduledAt   DateTime
+  duration      Int      @default(60) // minutes
+
+  type          InterviewType
+  status        InterviewStatus @default(SCHEDULED)
+
+  // Meeting details
+  meetingLink   String?
+  meetingNotes  String?  @db.Text
+  location      String?
+
+  // Interviewer
+  interviewerId String?
+  interviewer   User?    @relation(fields: [interviewerId], references: [id])
+
+  // Outcome
+  completedAt   DateTime?
+  rating        Int?     // 1-5
+  feedback      String?  @db.Text
+  decision      String?  // PROCEED, REJECT, MAYBE
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([applicationId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@index([interviewerId])
 }

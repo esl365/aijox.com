@@ -50,8 +50,23 @@ export default async function SchoolDashboardPage() {
   const { getDashboardStats, getRecentJobs, getRecentApplications, getHiringFunnelData, getPerformanceBenchmarks } = await import('@/app/actions/dashboard-stats');
   const { getTopRatedCandidates, getMatchQualityMetrics, getVisaEligibilityMetrics } = await import('@/app/actions/ai-metrics');
   const { calculateOverallScore, getScoreColor, getScoreCategory } = await import('@/lib/utils/ai-score');
+  const { getAlerts, getUnreadAlertsCount } = await import('@/app/actions/alerts');
+  const { getActivityFeed } = await import('@/app/actions/activity');
+  const { getTodayInterviews } = await import('@/app/actions/interviews');
+  const { SmartAlertsWidget } = await import('@/components/school/SmartAlertsWidget');
+  const { ActivityFeed } = await import('@/components/school/ActivityFeed');
+  const { TodayScheduleWidget } = await import('@/components/school/TodayScheduleWidget');
+  const { QuickCandidateCard } = await import('@/components/school/QuickCandidateCard');
 
-  const [stats, recentJobs, recentApplications, topCandidates, matchMetrics, visaMetrics, funnelData, benchmarks] = await Promise.all([
+  type QuickCandidate = {
+    id: string;
+    candidateName: string;
+    jobTitle: string;
+    appliedDate: Date;
+    aiMatchScore?: number | null;
+  };
+
+  const [stats, recentJobs, recentApplications, topCandidates, matchMetrics, visaMetrics, funnelData, benchmarks, alerts, unreadCount, activities, todayInterviews] = await Promise.all([
     getDashboardStats(),
     getRecentJobs(),
     getRecentApplications(),
@@ -60,7 +75,23 @@ export default async function SchoolDashboardPage() {
     getVisaEligibilityMetrics().catch(() => ({ totalApplications: 0, eligibleCount: 0, ineligibleCount: 0, byCountry: [] })),
     getHiringFunnelData(),
     getPerformanceBenchmarks(),
+    getAlerts({ read: false, limit: 10 }).catch(() => []),
+    getUnreadAlertsCount().catch(() => 0),
+    getActivityFeed(15).catch(() => []),
+    getTodayInterviews().catch(() => []),
   ]);
+
+  // Transform recent applications for Quick Action Cards
+  const quickCandidates: QuickCandidate[] = recentApplications
+    .filter(app => app.status === 'NEW')
+    .slice(0, 6)
+    .map(app => ({
+      id: app.id,
+      candidateName: app.candidateName,
+      jobTitle: app.jobTitle,
+      appliedDate: new Date(app.appliedDate),
+      aiMatchScore: undefined,
+    }));
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -78,6 +109,39 @@ export default async function SchoolDashboardPage() {
               </Button>
             </Link>
             <LogoutButton />
+          </div>
+        </div>
+
+        {/* P0 Dashboard Enhancement: 3-Column Layout */}
+        <div className="grid lg:grid-cols-[350px_1fr_350px] gap-6">
+          {/* Left Column: Alerts & Insights */}
+          <div className="space-y-6">
+            <SmartAlertsWidget alerts={alerts} unreadCount={unreadCount} />
+            <ActivityFeed activities={activities} limit={10} />
+          </div>
+
+          {/* Center Column: Priority Actions */}
+          <div className="space-y-6">
+            {quickCandidates.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl">Priority Actions</CardTitle>
+                  <CardDescription>New applications requiring review</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {quickCandidates.map((candidate) => (
+                      <QuickCandidateCard key={candidate.id} candidate={candidate} />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Column: Today's Schedule */}
+          <div>
+            <TodayScheduleWidget interviews={todayInterviews} />
           </div>
         </div>
 

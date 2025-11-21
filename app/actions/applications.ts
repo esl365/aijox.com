@@ -181,6 +181,106 @@ export async function getApplicationById(applicationId: string) {
 }
 
 /**
+ * Update application status (for schools)
+ */
+export async function updateApplicationStatus(
+  applicationId: string,
+  status: 'NEW' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED'
+) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || session.user.role !== 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Unauthorized'
+      };
+    }
+
+    const schoolProfile = await prisma.schoolProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!schoolProfile) {
+      return {
+        success: false,
+        error: 'School profile not found'
+      };
+    }
+
+    // Verify the application belongs to this school's job
+    const application = await prisma.application.findFirst({
+      where: {
+        id: applicationId,
+        job: {
+          schoolId: schoolProfile.id,
+        },
+      },
+      include: {
+        job: {
+          select: {
+            title: true,
+          },
+        },
+        teacher: {
+          include: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      return {
+        success: false,
+        error: 'Application not found'
+      };
+    }
+
+    // Update timestamps based on status
+    const updateData: any = { status };
+    const now = new Date();
+
+    if (status === 'SCREENING') {
+      updateData.screenedAt = now;
+    } else if (status === 'INTERVIEW') {
+      updateData.interviewedAt = now;
+    } else if (status === 'OFFER') {
+      updateData.offeredAt = now;
+    } else if (status === 'HIRED') {
+      updateData.hiredAt = now;
+    } else if (status === 'REJECTED') {
+      updateData.rejectedAt = now;
+    }
+
+    await prisma.application.update({
+      where: { id: applicationId },
+      data: updateData,
+    });
+
+    revalidatePath('/school/dashboard');
+    revalidatePath('/school/applications');
+    revalidatePath(`/school/applications/${applicationId}`);
+
+    return {
+      success: true,
+      message: `Application status updated to ${status}`
+    };
+
+  } catch (error: any) {
+    console.error('Failed to update application status:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Withdraw an application
  */
 export async function withdrawApplication(applicationId: string) {
