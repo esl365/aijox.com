@@ -46,68 +46,19 @@ export default async function SchoolDashboardPage() {
     }
   }
 
-  const stats = {
-    activeJobs: 8,
-    totalApplications: 156,
-    totalViews: 892,
-    messagesUnread: 5,
-    avgResponseRate: 82,
-    hiringRate: 18,
-  };
+  // Fetch all dashboard data in parallel using server actions
+  const { getDashboardStats, getRecentJobs, getRecentApplications } = await import('@/app/actions/dashboard-stats');
+  const { getTopRatedCandidates, getMatchQualityMetrics, getVisaEligibilityMetrics } = await import('@/app/actions/ai-metrics');
+  const { calculateOverallScore, getScoreColor, getScoreCategory } = await import('@/lib/utils/ai-score');
 
-  const recentJobs = [
-    {
-      id: 1,
-      title: 'ESL Teacher',
-      location: 'Seoul, South Korea',
-      status: 'ACTIVE',
-      applications: 28,
-      views: 145,
-      posted: '2025-01-15'
-    },
-    {
-      id: 2,
-      title: 'Math Teacher',
-      location: 'Seoul, South Korea',
-      status: 'ACTIVE',
-      applications: 22,
-      views: 112,
-      posted: '2025-01-10'
-    },
-    {
-      id: 3,
-      title: 'Science Teacher',
-      location: 'Seoul, South Korea',
-      status: 'DRAFT',
-      applications: 0,
-      views: 0,
-      posted: '2025-01-20'
-    },
-  ];
-
-  const recentApplications = [
-    {
-      id: 1,
-      candidateName: 'Sarah Wilson',
-      jobTitle: 'ESL Teacher',
-      appliedDate: '3 hours ago',
-      status: 'NEW'
-    },
-    {
-      id: 2,
-      candidateName: 'James Lee',
-      jobTitle: 'Math Teacher',
-      appliedDate: '1 day ago',
-      status: 'REVIEWED'
-    },
-    {
-      id: 3,
-      candidateName: 'Emma Davis',
-      jobTitle: 'ESL Teacher',
-      appliedDate: '2 days ago',
-      status: 'SHORTLISTED'
-    },
-  ];
+  const [stats, recentJobs, recentApplications, topCandidates, matchMetrics, visaMetrics] = await Promise.all([
+    getDashboardStats(),
+    getRecentJobs(),
+    getRecentApplications(),
+    getTopRatedCandidates(6).catch(() => []),
+    getMatchQualityMetrics().catch(() => ({ averageSimilarityScore: 0, totalMatches: 0, emailsSent: 0, emailsDelivered: 0, matchesPerJob: [] })),
+    getVisaEligibilityMetrics().catch(() => ({ totalApplications: 0, eligibleCount: 0, ineligibleCount: 0, byCountry: [] })),
+  ]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -207,6 +158,103 @@ export default async function SchoolDashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* AI-Powered Insights Section - Phase 2 */}
+        {(topCandidates.length > 0 || matchMetrics.totalMatches > 0 || visaMetrics.totalApplications > 0) && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">AI-Powered Insights</h2>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Agent 1: AI Screener - Top Rated Candidates */}
+              {topCandidates.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Top-Rated Candidates</CardTitle>
+                    <CardDescription>AI video analysis scores</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {topCandidates.slice(0, 3).map((candidate) => (
+                        <div key={candidate.id} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
+                          <div className="flex-1">
+                            <p className="font-medium">{candidate.name}</p>
+                            <p className="text-xs text-muted-foreground">{candidate.appliedFor}</p>
+                          </div>
+                          <div className={`text-right ${getScoreColor(candidate.overallScore)}`}>
+                            <p className="font-bold">{candidate.overallScore}</p>
+                            <p className="text-xs">{getScoreCategory(candidate.overallScore)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Agent 2: Headhunter - Match Quality */}
+              {matchMetrics.totalMatches > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Job Matching Performance</CardTitle>
+                    <CardDescription>Automated headhunter metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Matches:</span>
+                        <span className="font-semibold">{matchMetrics.totalMatches}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Avg Similarity:</span>
+                        <span className="font-semibold">{(matchMetrics.averageSimilarityScore * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Emails Sent:</span>
+                        <span className="font-semibold">{matchMetrics.emailsSent}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Delivered:</span>
+                        <span className="font-semibold">{matchMetrics.emailsDelivered}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Agent 3: Visa Guard - Eligibility Overview */}
+              {visaMetrics.totalApplications > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Visa Eligibility Status</CardTitle>
+                    <CardDescription>Compliance tracking</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Applications:</span>
+                        <span className="font-semibold">{visaMetrics.totalApplications}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-600">Eligible:</span>
+                        <span className="font-semibold text-green-600">{visaMetrics.eligibleCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-red-600">Ineligible:</span>
+                        <span className="font-semibold text-red-600">{visaMetrics.ineligibleCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Eligibility Rate:</span>
+                        <span className="font-semibold">
+                          {((visaMetrics.eligibleCount / visaMetrics.totalApplications) * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
