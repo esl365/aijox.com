@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { register } from '@/lib/actions/auth';
-import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 
 export default function SignupPage() {
-  const router = useRouter();
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
 
@@ -19,14 +17,50 @@ export default function SignupPage() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
     startTransition(async () => {
-      const result = await register(formData);
+      try {
+        // Check if user already exists
+        const response = await fetch('/api/auth/check-email?email=' + encodeURIComponent(email));
+        const data = await response.json();
 
-      if (result?.error) {
-        setError(result.error);
+        if (!data.available) {
+          setError('User with this email already exists');
+          return;
+        }
+
+        // Create user via API
+        const signupResponse = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, firstName: name.split(' ')[0], lastName: name.split(' ')[1] || '', role: 'SCHOOL' }),
+        });
+
+        const signupData = await signupResponse.json();
+
+        if (!signupResponse.ok) {
+          setError(signupData.error || 'Failed to create account');
+          return;
+        }
+
+        // Sign in the user
+        const result = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError('Failed to sign in after registration');
+        } else if (result?.ok) {
+          window.location.href = '/school/dashboard';
+        }
+      } catch (error) {
+        setError('An unexpected error occurred');
       }
-      // If no error, NextAuth will automatically redirect via redirectTo
     });
   };
 

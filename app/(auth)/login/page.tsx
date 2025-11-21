@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { authenticate } from '@/lib/actions/auth';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,18 +17,23 @@ export default function LoginPage() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
     startTransition(async () => {
-      console.log('Calling authenticate...');
-      const result = await authenticate(formData);
-      console.log('Authenticate result:', result);
+      console.log('Calling signIn...');
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+      console.log('SignIn result:', result);
 
       if (result?.error) {
         console.log('Got error:', result.error);
-        setError(result.error);
-      } else if (result?.success) {
+        setError('Invalid email or password');
+      } else if (result?.ok) {
         console.log('Login successful, redirecting...');
-        // Use window.location.href to ensure cookies are properly set
         window.location.href = '/school/dashboard';
       } else {
         console.log('Unexpected result:', result);
