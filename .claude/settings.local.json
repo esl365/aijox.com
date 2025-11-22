@@ -48,7 +48,10 @@
       "WebSearch",
       "Bash(powershell -Command \"Get-Content ''C:\\aijobx\\specification\\Completion.md'' | Select-Object -Last 100\")",
       "Bash(powershell -Command \"(Get-Content ''C:\\aijobx\\prisma\\schema.prisma'' | Measure-Object -Line).Lines\")",
-      "Bash(powershell -Command \"Get-Content ''C:\\aijobx\\prisma\\schema.prisma'' | Select-Object -Last 40\")"
+      "Bash(powershell -Command \"Get-Content ''C:\\aijobx\\prisma\\schema.prisma'' | Select-Object -Last 40\")",
+      "Bash(powershell:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run db:seed:new:*)"
     ],
     "deny": [],
     "ask": []

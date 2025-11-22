@@ -93,15 +93,15 @@ FUNCTION generateUserFeedback(analysis: VideoAnalysis) -> UserFeedback
 
   // Technical quality feedback
   IF analysis.lighting_quality IN ["Poor", "Fair"] THEN
-    tips.add("=¡ Improve lighting: Record near window or use desk lamp")
+    tips.add("=ï¿½ Improve lighting: Record near window or use desk lamp")
   END IF
 
   IF analysis.audio_clarity IN ["Poor", "Fair"] THEN
-    tips.add("<¤ Improve audio: Find quiet room, speak toward microphone")
+    tips.add("<ï¿½ Improve audio: Find quiet room, speak toward microphone")
   END IF
 
   IF NOT analysis.background_appropriate THEN
-    tips.add("=¼ Background: Choose clean, uncluttered background")
+    tips.add("=ï¿½ Background: Choose clean, uncluttered background")
   END IF
 
   IF NOT analysis.appearance_professional THEN
@@ -110,11 +110,11 @@ FUNCTION generateUserFeedback(analysis: VideoAnalysis) -> UserFeedback
 
   // Performance feedback
   IF analysis.accent_clarity_score < 7 THEN
-    tips.add("=ã Clarity: Speak slowly and enunciate clearly")
+    tips.add("=ï¿½ Clarity: Speak slowly and enunciate clearly")
   END IF
 
   IF analysis.energy_level == "Low" THEN
-    tips.add("¡ Energy: Show enthusiasm! Smile, use gestures, vary tone")
+    tips.add("ï¿½ Energy: Show enthusiasm! Smile, use gestures, vary tone")
   END IF
 
   // Overall recommendation

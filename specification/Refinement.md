@@ -447,7 +447,7 @@ export async function setUserRole(role: UserRole) {
 
 ---
 
-### 2. Input Validation  
+### 2. Input Validation ï¿½
 
 **Issues Found**:
 
@@ -516,7 +516,7 @@ export async function setUserRole(role: string) {
 
 ---
 
-### 3. Rate Limiting  
+### 3. Rate Limiting ï¿½
 
 **Current Implementation**: None found in codebase
 
@@ -973,7 +973,7 @@ export async function trackAICost(
 - No rate limiting on AI-intensive operations
 - Some type safety issues (`any` usage)
 
-**Performance Bottlenecks**  :
+**Performance Bottlenecks** ï¿½:
 - Vector search will slow down significantly at >100K teachers
 - No caching for expensive operations
 - Video analysis timeout issues

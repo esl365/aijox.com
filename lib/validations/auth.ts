@@ -11,12 +11,13 @@ export const passwordSchema = z
 
 /**
  * Email validation schema
+ * Note: trim() and toLowerCase() must come BEFORE email() validation
  */
 export const emailSchema = z
   .string()
-  .email('Please enter a valid email address')
+  .trim()
   .toLowerCase()
-  .trim();
+  .email('Please enter a valid email address');
 
 /**
  * Signup schema - Phase 1: Minimal required fields
