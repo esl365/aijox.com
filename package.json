@@ -19,6 +19,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:new": "tsx scripts/seed/index.ts",
     "db:create-admin": "tsx scripts/create-admin.ts",
+    "db:validate": "tsx scripts/validate-schema.ts",
     "seo:validate": "tsx scripts/validate-google-jobs.ts",
     "seo:validate-job": "tsx scripts/validate-google-jobs.ts",
     "alerts:test": "tsx scripts/test-job-alerts.ts",
