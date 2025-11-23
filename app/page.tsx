@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Globe, Users, Briefcase, Sparkles, Search, Shield, Lock, CheckCircle, Menu } from 'lucide-react';
 import { Footer } from '@/components/shared/footer';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { prisma } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -165,9 +166,9 @@ export default async function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header with Mobile Navigation */}
-      <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50 dark:bg-gray-900/95 dark:border-gray-800">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Globe className="h-8 w-8 text-primary" />
@@ -180,6 +181,7 @@ export default async function Home() {
             <Link href="/schools">
               <Button variant="ghost">Schools</Button>
             </Link>
+            <ThemeToggle />
             <Link href="/login">
               <Button variant="outline">Sign In</Button>
             </Link>
@@ -187,9 +189,12 @@ export default async function Home() {
               <Button>Get Started</Button>
             </Link>
           </nav>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-6 w-6" />
-          </Button>
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -209,7 +214,7 @@ export default async function Home() {
           </div>
 
           {/* Prominent Search Bar */}
-          <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 md:p-8">
             <form action="/jobs" method="GET" className="space-y-4">
               <div className="grid md:grid-cols-[1fr_auto_auto] gap-4">
                 <Input
@@ -433,7 +438,7 @@ export default async function Home() {
       </section>
 
       {/* Real Stats Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-16">
+      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 text-white py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Platform Statistics</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
