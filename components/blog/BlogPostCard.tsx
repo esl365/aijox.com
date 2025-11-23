@@ -73,7 +73,7 @@ export function BlogPostCard({ post, featured = false }: BlogPostCardProps) {
 
           {/* Meta info */}
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-            <span>{formatDate(post.metadata.date)}</span>
+            <span>{formatDate(post.metadata.publishedAt)}</span>
             <span>{post.readingTime}</span>
           </div>
         </CardContent>

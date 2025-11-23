@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: metadata.title,
       description: metadata.description,
       type: 'article',
-      publishedTime: metadata.date,
+      publishedTime: metadata.publishedAt,
       authors: [metadata.author],
       tags: metadata.tags,
       images: metadata.image ? [metadata.image] : [],
@@ -135,7 +135,7 @@ export default async function BlogPostPage({ params }: Props) {
                 </span>
               </div>
               <Separator orientation="vertical" className="h-4" />
-              <time dateTime={metadata.date}>{formatDate(metadata.date)}</time>
+              <time dateTime={metadata.publishedAt}>{formatDate(metadata.publishedAt)}</time>
               <Separator orientation="vertical" className="h-4" />
               <span>{readingTime}</span>
             </div>

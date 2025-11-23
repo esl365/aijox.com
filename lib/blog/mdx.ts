@@ -104,7 +104,7 @@ export function getAllPosts(): BlogPostWithoutContent[] {
     .filter((post): post is BlogPostWithoutContent => post !== null)
     .sort((a, b) => {
       // Sort by date descending
-      return new Date(b.metadata.date).getTime() - new Date(a.metadata.date).getTime();
+      return new Date(b.metadata.publishedAt).getTime() - new Date(a.metadata.publishedAt).getTime();
     });
 
   return posts;
@@ -258,7 +258,7 @@ function isValidMetadata(data: any): data is BlogPostMetadata {
   return (
     typeof data.title === 'string' &&
     typeof data.description === 'string' &&
-    typeof data.date === 'string' &&
+    typeof data.publishedAt === 'string' &&
     typeof data.author === 'string' &&
     typeof data.category === 'string' &&
     Array.isArray(data.tags) &&

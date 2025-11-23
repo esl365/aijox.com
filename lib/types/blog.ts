@@ -7,7 +7,7 @@
 export type BlogPostMetadata = {
   title: string;
   description: string;
-  date: string; // ISO date string
+  publishedAt: string; // ISO date string
   author: string;
   category: string;
   tags: string[];
