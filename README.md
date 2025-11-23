@@ -89,9 +89,18 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📚 Documentation
 
+### Core Documentation
+
 - **[Specification](./specification/Specification.md)** - Complete technical specification
 - **[Architecture](./docs/ARCHITECTURE.md)** - System architecture and data flows
 - **[Setup Guide](./docs/SETUP.md)** - Detailed setup instructions
+- **[Performance](./docs/PERFORMANCE.md)** - Performance optimization & metrics
+- **[API Reference](./docs/API.md)** - API endpoints & server actions
+
+### Phase 0 Documentation (Stabilization)
+
+- **[Implementation Plan](./docs/Phase0_Implementation_Plan.md)** - 4-week stabilization roadmap
+- **[Week 3 Summary](./docs/phase0/Week3_Testing_Summary.md)** - Testing & QA expansion results
 
 ## 🏗️ Project Structure
 
@@ -135,15 +144,38 @@ See [`.env.example`](./.env.example) for all required environment variables.
 
 ## 🧪 Testing
 
+### Test Coverage: 80%+ ✅
+
 ```bash
 # Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
 npm run test
 
-# Run specific agent tests
-npm run test -- agent1  # AI Screener
-npm run test -- agent2  # Autonomous Headhunter
-npm run test -- agent3  # Visa Guard
+# Run tests with UI
+npm run test:ui
 ```
+
+### Test Suites
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| **Unit Tests** | 90 | ✅ Passing |
+| **Integration Tests** | 52 | ✅ Passing |
+| **UI Tests** | 19 | ✅ Passing |
+| **Total** | **161** | **✅ All Passing** |
+
+#### Coverage by Module
+
+- **lib/utils**: 100% (77 tests)
+- **Auth Flow**: 9 integration tests
+- **Job Posting**: 11 integration tests
+- **Application Submission**: 13 integration tests
+- **UI Components**: 19 smoke tests
 
 ## 🚢 Deployment
 

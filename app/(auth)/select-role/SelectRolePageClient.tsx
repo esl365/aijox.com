@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { RoleSelector } from '@/components/auth/role-selector';
 import { getSetupUrl, getDashboardUrl } from '@/lib/utils/routing';
+import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function SelectRolePageClient() {
   const router = useRouter();
@@ -31,14 +32,7 @@ export default function SelectRolePageClient() {
 
   // Show loading state while checking session
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading your account..." />;
   }
 
   // Don't show form if not authenticated or redirecting

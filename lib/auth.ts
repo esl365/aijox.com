@@ -31,7 +31,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     newUser: '/select-role', // Redirect new users to role selection
   },
   providers: [
-    // OAuth providers temporarily disabled until we set up proper adapter configuration
     // Google({
     //   clientId: process.env.GOOGLE_CLIENT_ID,
     //   clientSecret: process.env.GOOGLE_CLIENT_SECRET,

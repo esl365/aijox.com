@@ -6,11 +6,17 @@ import { TeacherProfileForm } from '@/components/teacher/teacher-profile-form';
 import type { TeacherProfileFormData } from '@/lib/validations/teacher-profile';
 import { useEffect, useState } from 'react';
 import { getDashboardUrl } from '@/lib/utils/routing';
+import { LoadingScreen } from '@/components/ui/loading-screen';
+import { ErrorMessage } from '@/components/ui/error-message';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TeacherSetupClient() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -37,6 +43,9 @@ export default function TeacherSetupClient() {
   }, [session, status, router]);
 
   const handleSubmit = async (data: TeacherProfileFormData) => {
+    setIsSaving(true);
+    setError(null);
+
     try {
       const response = await fetch('/api/teacher/profile', {
         method: 'POST',
@@ -45,26 +54,34 @@ export default function TeacherSetupClient() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save profile');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to save profile');
       }
+
+      toast({
+        title: 'Profile saved!',
+        description: 'Your teacher profile has been created successfully.',
+      });
 
       router.push(getDashboardUrl('TEACHER'));
       router.refresh();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save profile. Please try again.';
       console.error('Error saving profile:', error);
-      throw error;
+      setError(errorMessage);
+
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   if (status === 'loading' || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Setting up your profile..." />;
   }
 
   if (!session?.user) {
@@ -83,6 +100,16 @@ export default function TeacherSetupClient() {
             This information will be used by our AI to match you with relevant opportunities.
           </p>
         </div>
+
+        {error && (
+          <div className="mb-6">
+            <ErrorMessage
+              message={error}
+              onRetry={() => setError(null)}
+              retryLabel="Dismiss"
+            />
+          </div>
+        )}
 
         <TeacherProfileForm
           userId={session.user.id}

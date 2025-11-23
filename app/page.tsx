@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Globe, Users, Briefcase, Sparkles, Search, Shield, Lock, CheckCircle, Menu } from 'lucide-react';
+import { Globe, Users, Briefcase, Sparkles, Search, Shield, Lock, CheckCircle } from 'lucide-react';
 import { Footer } from '@/components/shared/footer';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { MobileNav } from '@/components/mobile/mobile-nav';
 import { prisma } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -191,9 +192,7 @@ export default async function Home() {
           </nav>
           <div className="flex items-center gap-2 md:hidden">
             <ThemeToggle />
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-            </Button>
+            <MobileNav />
           </div>
         </div>
       </header>

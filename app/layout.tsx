@@ -3,6 +3,9 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Providers } from './providers';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
+import { OfflineBanner } from '@/components/pwa/offline-banner';
+import { UpdateNotification } from '@/components/pwa/update-notification';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -34,6 +37,31 @@ export const metadata: Metadata = {
     email: false,
     address: false,
     telephone: false,
+  },
+  // PWA Configuration
+  manifest: '/manifest.json',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#3b82f6' },
+    { media: '(prefers-color-scheme: dark)', color: '#1e40af' }
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'EduNexus',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' }
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+    ],
   },
   openGraph: {
     type: 'website',
@@ -81,8 +109,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apple Touch Icon */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="EduNexus" />
+      </head>
       <body className={inter.className}>
         <Providers>
+          {/* PWA Components */}
+          <OfflineBanner />
+          <InstallPrompt />
+          <UpdateNotification />
+
+          {/* Main Content */}
           {children}
         </Providers>
         <Toaster />

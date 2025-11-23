@@ -51,9 +51,16 @@
       "Bash(powershell -Command \"Get-Content ''C:\\aijobx\\prisma\\schema.prisma'' | Select-Object -Last 40\")",
       "Bash(powershell:*)",
       "Bash(npm test:*)",
-      "Bash(npm run db:seed:new:*)"
+      "Bash(npm run db:seed:new:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(New-Item -Path \"C:\\aijobx\\docs\\API.md\" -ItemType File -Force)",
+      "Bash(Out-Null)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "stack-auth"
+  ]
 }

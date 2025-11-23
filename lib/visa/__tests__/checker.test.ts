@@ -18,7 +18,7 @@ describe('visa-checker', () => {
 
   describe('checkVisaEligibility', () => {
     it('Should return eligible for valid South Korea E-2 candidate', () => {
-      const result = checkVisaEligibility('South Korea', validSouthKoreaCandidate);
+      const result = checkVisaEligibility(validSouthKoreaCandidate, 'South Korea');
 
       expect(result.eligible).toBe(true);
       expect(result.visaType).toBe('E-2');
@@ -33,7 +33,7 @@ describe('visa-checker', () => {
         citizenship: 'Philippines',
       };
 
-      const result = checkVisaEligibility('South Korea', nonNative);
+      const result = checkVisaEligibility(nonNative, 'South Korea');
 
       expect(result.eligible).toBe(false);
       expect(result.confidence).toBeLessThan(30);
@@ -59,14 +59,14 @@ describe('visa-checker', () => {
         criminalRecord: true,
       };
 
-      const result = checkVisaEligibility('South Korea', withRecord);
+      const result = checkVisaEligibility(withRecord, 'South Korea');
 
       expect(result.eligible).toBe(false);
       expect(result.failedRequirements.some(r => r.toLowerCase().includes('criminal'))).toBe(true);
     });
 
     it('Should return confidence 95 for eligible', () => {
-      const result = checkVisaEligibility('South Korea', validSouthKoreaCandidate);
+      const result = checkVisaEligibility(validSouthKoreaCandidate, 'South Korea');
 
       expect(result.eligible).toBe(true);
       expect(result.confidence).toBeGreaterThanOrEqual(90);
@@ -80,7 +80,7 @@ describe('visa-checker', () => {
         nativeSpeaker: false,
       };
 
-      const result = checkVisaEligibility('South Korea', disqualified);
+      const result = checkVisaEligibility(disqualified, 'South Korea');
 
       expect(result.eligible).toBe(false);
       expect(result.confidence).toBeLessThanOrEqual(20);
@@ -96,7 +96,7 @@ describe('visa-checker', () => {
         },
       };
 
-      const result = checkVisaEligibility('South Korea', missingRequirements);
+      const result = checkVisaEligibility(missingRequirements, 'South Korea');
 
       expect(result.eligible).toBe(false);
       expect(result.confidence).toBeLessThan(50);
@@ -113,14 +113,14 @@ describe('visa-checker', () => {
         },
       };
 
-      const result = checkVisaEligibility('South Korea', candidate);
+      const result = checkVisaEligibility(candidate, 'South Korea');
 
       expect(result.eligible).toBe(false);
       expect(result.failedRequirements.length).toBeGreaterThan(0);
     });
 
     it('Should handle unknown country gracefully', () => {
-      const result = checkVisaEligibility('Unknown Country', validSouthKoreaCandidate);
+      const result = checkVisaEligibility(validSouthKoreaCandidate, 'Unknown Country');
 
       expect(result.eligible).toBe(false);
       expect(result.visaType).toBe('Unknown');
@@ -231,7 +231,7 @@ describe('visa-checker', () => {
       const results = getEligibleCountries(validSouthKoreaCandidate);
 
       results.forEach(country => {
-        expect(checkVisaEligibility(country, validSouthKoreaCandidate).eligible).toBe(true);
+        expect(checkVisaEligibility(validSouthKoreaCandidate, country).eligible).toBe(true);
       });
     });
 
