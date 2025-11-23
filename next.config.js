@@ -54,6 +54,10 @@ const pwaConfig = withPWA({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
+  scope: '/',
+  sw: 'sw.js',
+  publicExcludes: ['!robots.txt', '!sitemap.xml', '!manifest.json'],
+  buildExcludes: [/middleware-manifest\.json$/],
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,
