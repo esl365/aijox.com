@@ -694,6 +694,11 @@ export async function sendTestJobAlert(
     requiresReview: false,
     externalApplicationUrl: null,
     applicationInstructions: null,
+    // Map View geolocation fields
+    latitude: null,
+    longitude: null,
+    geocodedAt: null,
+    geocodeConfidence: null,
   };
 
   return sendInstantJobAlert(

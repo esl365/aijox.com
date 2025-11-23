@@ -328,6 +328,12 @@ model JobPosting {
   matchNotificationsSent Int      @default(0)
   lastMatchedAt          DateTime?
 
+  // Geolocation (Map View Feature)
+  latitude           Float?    @map("latitude")
+  longitude          Float?    @map("longitude")
+  geocodedAt         DateTime? @map("geocoded_at")
+  geocodeConfidence  Float?    @map("geocode_confidence")
+
   // Status
   status      String   @default("ACTIVE") // ACTIVE, CLOSED, FILLED
 
@@ -341,6 +347,8 @@ model JobPosting {
 
   @@index([status, country])
   @@index([subject])
+  @@index([latitude, longitude], name: "lat_lng_idx")
+  @@index([geocodedAt], name: "geocoded_idx")
 }
 
 // Application (The Funnel)
