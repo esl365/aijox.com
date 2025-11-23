@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       disqualifications: result.disqualifications || [],
       confidence: result.confidence,
       cached: result.cached,
-      ...(result.cached && result.cachedAt ? { cachedAt: result.cachedAt } : {}),
+      ...('cachedAt' in result && result.cachedAt ? { cachedAt: result.cachedAt } : {}),
     });
   } catch (error: any) {
     console.error('Visa validation API error:', error);
