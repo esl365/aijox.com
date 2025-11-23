@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { JobsPageClient } from './JobsPageClient';
 import { getJobFilterOptions, getJobStatsByCountry } from '@/app/actions/jobs';
+import { Navigation } from '@/components/shared/navigation';
 
 export const metadata: Metadata = {
   title: 'Browse International Teaching Jobs',
@@ -40,28 +41,33 @@ export default async function JobsPage() {
   const filterOptions = await getJobFilterOptions();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b">
+    <>
+      {/* Navigation Header */}
+      <Navigation />
+
+      <div className="min-h-screen bg-background">
+        {/* Page Header */}
+        <div className="border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
+          <div className="container mx-auto px-4 py-12">
+            <h1 className="text-4xl font-bold mb-2">
+              International Teaching Jobs
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Verified positions with competitive salaries and benefits
+            </p>
+          </div>
+        </div>
+
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-2">
-            International Teaching Jobs
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Verified positions with competitive salaries and benefits
-          </p>
+          {/* Stats Section */}
+          <Suspense fallback={<div className="h-32 bg-muted/20 rounded-lg mb-6 animate-pulse" />}>
+            <JobsStats />
+          </Suspense>
+
+          {/* Main Content */}
+          <JobsPageClient filterOptions={filterOptions} />
         </div>
       </div>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Stats Section */}
-        <Suspense fallback={<div className="h-32 bg-muted/20 rounded-lg mb-6 animate-pulse" />}>
-          <JobsStats />
-        </Suspense>
-
-        {/* Main Content */}
-        <JobsPageClient filterOptions={filterOptions} />
-      </div>
-    </div>
+    </>
   );
 }

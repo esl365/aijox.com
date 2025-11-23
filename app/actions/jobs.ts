@@ -10,13 +10,31 @@ import { prisma } from '@/lib/db';
 import type { JobPosting } from '@prisma/client';
 
 export type JobFilters = {
+  // Single selects (kept for backward compatibility)
   country?: string;
   subject?: string;
+
+  // Multi-selects
+  countries?: string[];
+  subjects?: string[];
+  employmentTypes?: string[];
+
+  // Salary
   minSalary?: number;
   maxSalary?: number;
+
+  // Benefits
   housingProvided?: boolean;
   flightProvided?: boolean;
+
+  // Experience
+  minYearsExperience?: number;
+
+  // Search
   searchQuery?: string;
+
+  // Sort
+  sortBy?: 'newest' | 'oldest' | 'salary_high' | 'salary_low' | 'experience';
 };
 
 export type JobListResponse = {
@@ -43,17 +61,34 @@ export async function getJobs(
       status: 'ACTIVE'
     };
 
-    if (filters.country) {
+    // Country filter (single or multi-select)
+    if (filters.countries && filters.countries.length > 0) {
+      where.country = { in: filters.countries };
+    } else if (filters.country) {
       where.country = filters.country;
     }
 
-    if (filters.subject) {
+    // Subject filter (single or multi-select)
+    if (filters.subjects && filters.subjects.length > 0) {
+      where.OR = filters.subjects.map(subject => ({
+        subject: {
+          contains: subject,
+          mode: 'insensitive'
+        }
+      }));
+    } else if (filters.subject) {
       where.subject = {
         contains: filters.subject,
         mode: 'insensitive'
       };
     }
 
+    // Employment type filter
+    if (filters.employmentTypes && filters.employmentTypes.length > 0) {
+      where.employmentType = { in: filters.employmentTypes };
+    }
+
+    // Salary range
     if (filters.minSalary !== undefined) {
       where.salaryUSD = {
         ...where.salaryUSD,
@@ -68,6 +103,7 @@ export async function getJobs(
       };
     }
 
+    // Benefits
     if (filters.housingProvided !== undefined) {
       where.housingProvided = filters.housingProvided;
     }
@@ -76,26 +112,66 @@ export async function getJobs(
       where.flightProvided = filters.flightProvided;
     }
 
+    // Experience
+    if (filters.minYearsExperience !== undefined) {
+      where.minYearsExperience = {
+        lte: filters.minYearsExperience
+      };
+    }
+
+    // Search query
     if (filters.searchQuery) {
-      where.OR = [
+      const searchConditions = [
         { title: { contains: filters.searchQuery, mode: 'insensitive' } },
         { description: { contains: filters.searchQuery, mode: 'insensitive' } },
         { schoolName: { contains: filters.searchQuery, mode: 'insensitive' } },
         { city: { contains: filters.searchQuery, mode: 'insensitive' } }
       ];
+
+      // If subject OR conditions exist, combine with search OR conditions
+      if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          { OR: searchConditions }
+        ];
+        delete where.OR;
+      } else {
+        where.OR = searchConditions;
+      }
     }
 
     // Get total count
     const total = await prisma.jobPosting.count({ where });
+
+    // Build orderBy clause based on sort option
+    let orderBy: any = [];
+
+    switch (filters.sortBy) {
+      case 'newest':
+        orderBy = [{ createdAt: 'desc' }];
+        break;
+      case 'oldest':
+        orderBy = [{ createdAt: 'asc' }];
+        break;
+      case 'salary_high':
+        orderBy = [{ salaryUSD: 'desc' }];
+        break;
+      case 'salary_low':
+        orderBy = [{ salaryUSD: 'asc' }];
+        break;
+      case 'experience':
+        orderBy = [{ minYearsExperience: 'asc' }];
+        break;
+      default:
+        orderBy = [{ createdAt: 'desc' }];
+    }
 
     // Get jobs
     const jobs = await prisma.jobPosting.findMany({
       where,
       skip,
       take: pageSize,
-      orderBy: [
-        { createdAt: 'desc' }
-      ]
+      orderBy
     });
 
     return {
@@ -167,6 +243,13 @@ export async function getJobFilterOptions() {
       distinct: ['subject']
     });
 
+    // Get distinct employment types
+    const employmentTypes = await prisma.jobPosting.findMany({
+      where: { status: 'ACTIVE', employmentType: { not: null } },
+      select: { employmentType: true },
+      distinct: ['employmentType']
+    });
+
     // Get salary range
     const salaryStats = await prisma.jobPosting.aggregate({
       where: { status: 'ACTIVE' },
@@ -177,6 +260,10 @@ export async function getJobFilterOptions() {
     return {
       countries: countries.map(c => c.country).sort(),
       subjects: subjects.map(s => s.subject).sort(),
+      employmentTypes: employmentTypes
+        .map(e => e.employmentType)
+        .filter((type): type is string => type !== null)
+        .sort(),
       salaryRange: {
         min: salaryStats._min.salaryUSD || 2000,
         max: salaryStats._max.salaryUSD || 8000
@@ -188,6 +275,7 @@ export async function getJobFilterOptions() {
     return {
       countries: [],
       subjects: [],
+      employmentTypes: [],
       salaryRange: { min: 2000, max: 8000 }
     };
   }

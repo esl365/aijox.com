@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { JobFilters } from '@/components/jobs/JobFilters';
+import { JobFiltersEnhanced } from '@/components/jobs/JobFiltersEnhanced';
 import { JobList } from '@/components/jobs/JobList';
 import { Button } from '@/components/ui/button';
 import { SaveSearchDialog } from '@/components/saved-searches/SaveSearchDialog';
@@ -12,6 +12,7 @@ type JobsPageClientProps = {
   filterOptions: {
     countries: string[];
     subjects: string[];
+    employmentTypes: string[];
     salaryRange: { min: number; max: number };
   };
 };
@@ -62,8 +63,8 @@ export function JobsPageClient({ filterOptions }: JobsPageClientProps) {
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Filters Sidebar */}
       <aside className="lg:col-span-1">
-        <div className="sticky top-4">
-          <JobFilters
+        <div className="sticky top-20">
+          <JobFiltersEnhanced
             onFilterChange={handleFilterChange}
             filterOptions={filterOptions}
           />
