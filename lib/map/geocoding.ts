@@ -4,10 +4,35 @@
  */
 
 import { OpenCageResponse } from '@/lib/types/map';
-import { retryAsync } from './utils';
 
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
 const OPENCAGE_BASE_URL = 'https://api.opencagedata.com/geocode/v1/json';
+
+// ============================================================================
+// Retry Utility (Inline to avoid importing browser dependencies)
+// ============================================================================
+
+async function retryAsync<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  let lastError: Error | undefined;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      if (i < maxRetries - 1) {
+        // Exponential backoff: delay * 2^i
+        await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, i)));
+      }
+    }
+  }
+
+  throw lastError || new Error('Max retries exceeded');
+}
 
 // ============================================================================
 // Geocoding Service

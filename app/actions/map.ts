@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/db';
 import { GeocodingService } from '@/lib/map/geocoding';
-import { getCountryCenterCoordinates, isValidCoordinates } from '@/lib/map/utils';
+import { getCountryCenterCoordinates, isValidCoordinates } from '@/lib/map/server-utils';
 import type {
   GeocodeResult,
   MapJob,
@@ -72,6 +72,10 @@ export async function geocodeJobPosting(jobId: string): Promise<GeocodeResult> {
     } else {
       // Fallback: Use country center coordinates
       const countryCenter = getCountryCenterCoordinates(job.country);
+
+      if (!countryCenter) {
+        throw new Error(`Country center not found for: ${job.country}`);
+      }
 
       await prisma.jobPosting.update({
         where: { id: jobId },

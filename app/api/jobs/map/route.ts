@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getJobsForMap } from '@/app/actions/map';
-import { isValidBounds } from '@/lib/map/utils';
+import { isValidBounds } from '@/lib/map/server-utils';
 import type { JobFilters } from '@/app/actions/jobs';
 import type { MapBounds } from '@/lib/types/map';
 
