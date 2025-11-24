@@ -54,7 +54,8 @@
       "Bash(npm run db:seed:new:*)",
       "Bash(npm run test:coverage:*)",
       "Bash(New-Item -Path \"C:\\aijobx\\docs\\API.md\" -ItemType File -Force)",
-      "Bash(Out-Null)"
+      "Bash(Out-Null)",
+      "Bash(npm run map:backfill:*)"
     ],
     "deny": [],
     "ask": []

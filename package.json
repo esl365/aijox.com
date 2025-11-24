@@ -23,6 +23,7 @@
     "seo:validate": "tsx scripts/validate-google-jobs.ts",
     "seo:validate-job": "tsx scripts/validate-google-jobs.ts",
     "alerts:test": "tsx scripts/test-job-alerts.ts",
+    "map:backfill": "tsx scripts/backfill-geocoding.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
