@@ -23,7 +23,9 @@ import {
   FileText,
   Users,
   Menu,
+  Globe,
 } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface NavigationProps {
   className?: string;
@@ -47,35 +49,35 @@ export async function Navigation({ className = '' }: NavigationProps) {
   const unreadMessages = 1;
 
   return (
-    <header className={`border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50 ${className}`}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+    <header className={`border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50 dark:bg-gray-950/95 dark:border-gray-800 ${className}`}>
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo - Same as Home */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              AI JobX
-            </div>
+            <Globe className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold">Global Educator Nexus</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             {!session?.user ? (
-              // Public Navigation
+              // Public Navigation - Same style as Home
               <>
-                <Link href="/jobs">
-                  <Button variant="ghost">Browse Jobs</Button>
+                <Link href="/jobs" className="text-sm font-medium hover:text-primary transition-colors">
+                  Find Jobs
                 </Link>
-                <Link href="/schools">
-                  <Button variant="ghost">Schools</Button>
+                <Link href="/schools" className="text-sm font-medium hover:text-primary transition-colors">
+                  Schools
                 </Link>
-                <Link href="/how-it-works">
-                  <Button variant="ghost">How It Works</Button>
+                <Link href="/blog" className="text-sm font-medium hover:text-primary transition-colors">
+                  Blog
                 </Link>
+                <ThemeToggle />
                 <Link href="/login">
-                  <Button variant="outline">Sign In</Button>
+                  <Button variant="outline" size="sm" className="bg-white hover:bg-gray-50 border-gray-300">Sign In</Button>
                 </Link>
                 <Link href="/signup">
-                  <Button>Get Started</Button>
+                  <Button size="sm" className="bg-black text-white hover:bg-gray-800">Get Started</Button>
                 </Link>
               </>
             ) : (
@@ -84,29 +86,21 @@ export async function Navigation({ className = '' }: NavigationProps) {
                 {/* Teacher Navigation */}
                 {userRole === 'TEACHER' && (
                   <>
-                    <Link href="/dashboard">
-                      <Button variant="ghost" className="gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Dashboard
-                      </Button>
+                    <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
                     </Link>
-                    <Link href="/jobs">
-                      <Button variant="ghost" className="gap-2">
-                        <BriefcaseIcon className="h-4 w-4" />
-                        Jobs
-                      </Button>
+                    <Link href="/jobs" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <BriefcaseIcon className="h-4 w-4" />
+                      Jobs
                     </Link>
-                    <Link href="/schools">
-                      <Button variant="ghost" className="gap-2">
-                        <Building2 className="h-4 w-4" />
-                        Schools
-                      </Button>
+                    <Link href="/schools" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <Building2 className="h-4 w-4" />
+                      Schools
                     </Link>
-                    <Link href="/profile">
-                      <Button variant="ghost" className="gap-2">
-                        <User className="h-4 w-4" />
-                        Profile
-                      </Button>
+                    <Link href="/profile" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <User className="h-4 w-4" />
+                      Profile
                     </Link>
                   </>
                 )}
@@ -114,29 +108,21 @@ export async function Navigation({ className = '' }: NavigationProps) {
                 {/* Recruiter Navigation */}
                 {userRole === 'RECRUITER' && (
                   <>
-                    <Link href="/recruiter/dashboard">
-                      <Button variant="ghost" className="gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Dashboard
-                      </Button>
+                    <Link href="/recruiter/dashboard" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
                     </Link>
-                    <Link href="/recruiter/jobs">
-                      <Button variant="ghost" className="gap-2">
-                        <BriefcaseIcon className="h-4 w-4" />
-                        My Jobs
-                      </Button>
+                    <Link href="/recruiter/jobs" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <BriefcaseIcon className="h-4 w-4" />
+                      My Jobs
                     </Link>
-                    <Link href="/recruiter/applications">
-                      <Button variant="ghost" className="gap-2">
-                        <FileText className="h-4 w-4" />
-                        Applications
-                      </Button>
+                    <Link href="/recruiter/applications" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <FileText className="h-4 w-4" />
+                      Applications
                     </Link>
-                    <Link href="/recruiter/profile">
-                      <Button variant="ghost" className="gap-2">
-                        <Building2 className="h-4 w-4" />
-                        School Profile
-                      </Button>
+                    <Link href="/recruiter/profile" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <Building2 className="h-4 w-4" />
+                      School Profile
                     </Link>
                   </>
                 )}
@@ -144,26 +130,22 @@ export async function Navigation({ className = '' }: NavigationProps) {
                 {/* Admin Navigation */}
                 {userRole === 'ADMIN' && (
                   <>
-                    <Link href="/admin/dashboard">
-                      <Button variant="ghost" className="gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Dashboard
-                      </Button>
+                    <Link href="/admin/dashboard" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
                     </Link>
-                    <Link href="/admin/users">
-                      <Button variant="ghost" className="gap-2">
-                        <Users className="h-4 w-4" />
-                        Users
-                      </Button>
+                    <Link href="/admin/users" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <Users className="h-4 w-4" />
+                      Users
                     </Link>
-                    <Link href="/admin/jobs">
-                      <Button variant="ghost" className="gap-2">
-                        <BriefcaseIcon className="h-4 w-4" />
-                        Jobs
-                      </Button>
+                    <Link href="/admin/jobs" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1.5">
+                      <BriefcaseIcon className="h-4 w-4" />
+                      Jobs
                     </Link>
                   </>
                 )}
+
+                <ThemeToggle />
 
                 {/* Notifications */}
                 <Link href="/notifications">
