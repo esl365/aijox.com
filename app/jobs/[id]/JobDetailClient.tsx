@@ -284,6 +284,28 @@ export function JobDetailClient({
           </div>
         )}
 
+        {/* Apply Now CTA */}
+        <div className="py-8 border-t border-gray-200 dark:border-gray-800">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="text-center sm:text-left">
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Ready to apply?
+              </h3>
+              <p className="text-gray-300 text-lg">
+                Take the next step in your teaching career
+              </p>
+            </div>
+            <Button
+              size="lg"
+              onClick={handleApply}
+              disabled={applying}
+              className="bg-white text-gray-900 hover:bg-gray-100 text-lg font-semibold px-10 h-14 w-full sm:w-auto"
+            >
+              {applying ? 'Checking...' : 'Apply Now'}
+            </Button>
+          </div>
+        </div>
+
         {/* About the Company Section */}
         <AboutCompanySection company={companyData} />
 
