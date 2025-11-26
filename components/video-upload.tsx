@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, Video, AlertCircle } from 'lucide-react';
+import { checkVideoRequirements, getVideoMetadata, formatFileSize, formatDuration } from '@/lib/video/compression';
 
 type UploadStatus = 'idle' | 'uploading' | 'analyzing' | 'complete' | 'error';
 
@@ -36,6 +37,7 @@ export function VideoUpload({
   );
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [warnings, setWarnings] = useState<string[]>([]);
 
   return (
     <Card>
@@ -125,13 +127,76 @@ export function VideoUpload({
           </Alert>
         )}
 
+        {/* Warnings */}
+        {warnings.length > 0 && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                {warnings.map((warning, i) => (
+                  <li key={i}>{warning}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Upload Button */}
         <UploadButton
           endpoint="videoResume"
+          onBeforeUploadBegin={async (files) => {
+            // Validate video requirements before upload
+            setWarnings([]);
+            setError(null);
+
+            const file = files[0];
+            if (!file) return files;
+
+            try {
+              // Check basic requirements
+              const validation = checkVideoRequirements(file);
+
+              if (!validation.valid) {
+                setError(validation.errors.join(' '));
+                setStatus('error');
+                throw new Error(validation.errors[0]);
+              }
+
+              // Show warnings if any
+              if (validation.warnings.length > 0) {
+                setWarnings(validation.warnings);
+              }
+
+              // Get and validate metadata
+              const metadata = await getVideoMetadata(file);
+
+              console.log('Video metadata:', {
+                size: formatFileSize(metadata.size),
+                duration: formatDuration(metadata.duration),
+                dimensions: `${metadata.width}x${metadata.height}`
+              });
+
+              // Check duration
+              if (metadata.duration > 300) {
+                const errorMsg = `Video is too long (${formatDuration(metadata.duration)}). Maximum is 5 minutes.`;
+                setError(errorMsg);
+                setStatus('error');
+                throw new Error(errorMsg);
+              }
+
+              return files;
+            } catch (err) {
+              const errorMessage = err instanceof Error ? err.message : 'Video validation failed';
+              setError(errorMessage);
+              setStatus('error');
+              throw err;
+            }
+          }}
           onClientUploadComplete={(res) => {
             console.log('Upload complete:', res);
             setStatus('analyzing');
             setUploadProgress(100);
+            setWarnings([]);
 
             // Refresh page after 5 seconds to show analysis
             setTimeout(() => {

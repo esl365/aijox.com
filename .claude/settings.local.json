@@ -55,7 +55,9 @@
       "Bash(npm run test:coverage:*)",
       "Bash(New-Item -Path \"C:\\aijobx\\docs\\API.md\" -ItemType File -Force)",
       "Bash(Out-Null)",
-      "Bash(npm run map:backfill:*)"
+      "Bash(npm run map:backfill:*)",
+      "WebFetch(domain:wellfound.com)",
+      "Bash(npm run baseline:database:*)"
     ],
     "deny": [],
     "ask": []

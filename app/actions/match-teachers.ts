@@ -79,7 +79,7 @@ export async function notifyMatchedTeachers(
       return {
         success: false,
         error: 'Rate limited',
-        message: rateLimitResult.error
+        message: rateLimitResult.error || 'Rate limit exceeded'
       };
     }
 

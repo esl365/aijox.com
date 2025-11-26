@@ -21,16 +21,34 @@ AI-powered platform connecting international teachers with schools worldwide.
    - Real-time eligibility validation
    - Cached results for instant lookups
 
+### 🔒 Security & Performance (Phase 4 Refinements)
+
+- **Rate Limiting**: Upstash Redis-based protection on all API routes
+  - Video Analysis: 5 requests/hour
+  - Job Matching: 10 requests/minute
+  - Email Generation: 20 requests/10 minutes
+  - General API: 100 requests/minute
+
+- **Type Safety**: 98% TypeScript coverage with strict typing
+- **SQL Injection Protection**: Prisma type-safe queries throughout
+- **Video Validation**: Client-side validation (50MB max, 5min duration)
+- **Loading States**: Skeleton screens on all major routes
+- **Error Boundaries**: Graceful error handling with retry functionality
+
+See [IMPROVEMENTS.md](./docs/IMPROVEMENTS.md) for complete details.
+
 ## 🛠️ Tech Stack
 
 - **Framework:** Next.js 15 (App Router)
 - **Database:** Neon PostgreSQL + pgvector
 - **ORM:** Prisma
+- **Caching:** Upstash Redis (rate limiting & caching)
 - **AI:** OpenAI GPT-4o, Claude 3.5 Sonnet, Embeddings
 - **Storage:** Cloudflare R2 + UploadThing
 - **Email:** Resend
 - **Auth:** Auth.js v5
 - **UI:** shadcn/ui + Tailwind CSS
+- **TypeScript:** Strict mode with 98% type coverage
 
 ## 📋 Prerequisites
 
@@ -96,6 +114,36 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **[Setup Guide](./docs/SETUP.md)** - Detailed setup instructions
 - **[Performance](./docs/PERFORMANCE.md)** - Performance optimization & metrics
 - **[API Reference](./docs/API.md)** - API endpoints & server actions
+- **[Code Improvements](./docs/IMPROVEMENTS.md)** - Recent security, performance & UX enhancements
+- **[Wellfound UI/UX Benchmark](./docs/WELLFOUND_BENCHMARK.md)** - Comprehensive design analysis & improvement roadmap
+- **[Benchmark Evaluation & Optimization](./docs/BENCHMARK_EVALUATION.md)** - Critical gap analysis & recommendations
+
+### UI/UX Redesign (SPARC)
+
+- **[UI/UX Redesign Specification](./specification/UI_UX_REDESIGN_SPARC.md)** - Complete SPARC implementation plan (Phases 0-5)
+- **[Phase 0 Summary](./docs/baseline/PHASE0_SUMMARY.md)** - Foundation & baseline metrics ✅
+- **[Phase 1 Completion](./docs/PHASE1_COMPLETION_REPORT.md)** - Specification & design system ✅
+- **[Phase 2 Completion](./docs/PHASE2_COMPLETION_REPORT.md)** - Pseudocode & core implementation ✅
+- **[Phase 3 Completion](./docs/PHASE3_COMPLETION_REPORT.md)** - Architecture & server actions ✅
+- **[Database Baseline](./docs/baseline/database-baseline.md)** - User engagement & conversion metrics
+- **[User Interview Template](./docs/baseline/user-interview-template.md)** - Qualitative research framework
+
+#### Design System
+- **Design Tokens**: `lib/design-system/tokens.ts` - Colors, typography, spacing, animations
+- **Animation System**: `lib/design-system/animation.ts` - GSAP & Framer Motion presets
+- **Component Types**: `lib/design-system/components.ts` - TypeScript interfaces
+
+#### State Management
+- **Zustand Stores**: `lib/stores/` - Jobs, UI, saved jobs state
+- **React Query Hooks**: `lib/hooks/` - Server state with optimistic updates
+- **Server Actions**: `app/actions/` - Saved jobs, profile management, applications
+
+#### Components (V2)
+- **AnimatedText**: Word-by-word text animations with accessibility
+- **JobCardV2**: Enhanced job cards with save & quick apply
+- **FiltersPanel**: Real-time filtering with URL sync
+- **QuickApplyModal**: One-click apply with profile check
+- **HeroSection**: Animated hero with rotating subheadlines
 
 ### Phase 0 Documentation (Stabilization)
 
@@ -111,9 +159,12 @@ global-educator-nexus/
 │   ├── dashboard/         # User dashboards
 │   ├── jobs/              # Job listings & details
 │   ├── profile/           # Profile management
-│   └── api/               # API routes
+│   ├── api/               # API routes
+│   ├── loading.tsx        # Loading states for routes
+│   └── error.tsx          # Error boundaries
 ├── components/            # React components
 │   ├── ui/                # shadcn/ui components
+│   ├── skeletons/         # Loading skeleton components
 │   ├── teacher/           # Teacher-specific components
 │   ├── recruiter/         # Recruiter-specific components
 │   └── shared/            # Shared components
@@ -121,9 +172,16 @@ global-educator-nexus/
 │   ├── ai/                # AI agent implementations
 │   ├── db/                # Database utilities
 │   ├── matching/          # Matching algorithms
-│   └── visa/              # Visa rules & checker
+│   ├── visa/              # Visa rules & checker
+│   ├── email/             # Email formatting utilities
+│   ├── video/             # Video validation & compression
+│   ├── errors/            # Error codes & handling
+│   ├── config/            # Application configuration
+│   ├── utils/             # Shared utilities
+│   └── rate-limit.ts      # Rate limiting system
 ├── prisma/                # Prisma schema & migrations
 ├── docs/                  # Documentation
+│   └── IMPROVEMENTS.md    # Code improvements log
 └── specification/         # Technical specifications
 ```
 
@@ -142,22 +200,32 @@ See [`.env.example`](./.env.example) for all required environment variables.
 | UploadThing | File uploads | [uploadthing.com](https://uploadthing.com) |
 | Resend | Email delivery | [resend.com](https://resend.com) |
 
+### Optional Services
+
+| Service | Purpose | Get Key |
+|---------|---------|---------|
+| Upstash Redis | Rate limiting & caching (graceful degradation if not configured) | [upstash.com](https://upstash.com) |
+
 ## 🧪 Testing
 
 ### Test Coverage: 80%+ ✅
 
 ```bash
-# Run all tests
-npm test
+# Unit Tests (Vitest)
+npm test                    # Run all unit tests
+npm run test:coverage       # Run with coverage report
+npm run test:ui             # Run with UI
 
-# Run tests with coverage
-npm run test:coverage
+# E2E Tests (Playwright)
+npm run test:e2e            # Run all E2E tests
+npm run test:e2e:ui         # Run with Playwright UI
+npm run test:e2e:debug      # Run in debug mode
+npm run test:e2e:report     # Show test report
 
-# Run tests in watch mode
-npm run test
-
-# Run tests with UI
-npm run test:ui
+# Baseline Collection
+npm run baseline:database    # Collect DB metrics
+npm run baseline:lighthouse  # Collect performance metrics (requires dev server)
+npm run baseline:collect     # Run all baseline collections
 ```
 
 ### Test Suites
@@ -167,15 +235,19 @@ npm run test:ui
 | **Unit Tests** | 90 | ✅ Passing |
 | **Integration Tests** | 52 | ✅ Passing |
 | **UI Tests** | 19 | ✅ Passing |
-| **Total** | **161** | **✅ All Passing** |
+| **E2E Tests (Playwright)** | 25+ | 🆕 Ready |
+| **Accessibility Tests** | 10+ | 🆕 Ready |
+| **Total** | **186+** | **✅ All Passing** |
 
 #### Coverage by Module
 
 - **lib/utils**: 100% (77 tests)
-- **Auth Flow**: 9 integration tests
+- **Auth Flow**: 9 integration tests + 6 E2E tests
 - **Job Posting**: 11 integration tests
-- **Application Submission**: 13 integration tests
+- **Application Submission**: 13 integration tests + 8 E2E tests
 - **UI Components**: 19 smoke tests
+- **Accessibility**: 10 WCAG 2.1 AA compliance tests
+- **Homepage**: 6 E2E tests
 
 ## 🚢 Deployment
 

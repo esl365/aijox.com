@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getVisaStatus } from '@/app/actions/visa-validation';
 import { auth } from '@/lib/auth';
+import { checkApiRateLimit } from '@/lib/rate-limit';
 
 /**
  * Visa Validation API - Agent 3: Visa Guard
@@ -31,6 +32,18 @@ const requestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // 0. Rate limiting check
+    const rateLimitResult = await checkApiRateLimit(request);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: rateLimitResult.error,
+        },
+        { status: 429, headers: rateLimitResult.headers }
+      );
+    }
+
     // 1. Parse request body
     const body = await request.json();
     const validationResult = requestSchema.safeParse(body);
@@ -83,13 +96,14 @@ export async function POST(request: NextRequest) {
       cached: result.cached,
       ...('cachedAt' in result && result.cachedAt ? { cachedAt: result.cachedAt } : {}),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Visa validation API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to validate visa eligibility';
 
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: error.message || 'Failed to validate visa eligibility',
+        message: errorMessage,
       },
       { status: 500 }
     );

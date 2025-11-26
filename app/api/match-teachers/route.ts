@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { notifyMatchedTeachers } from '@/app/actions/match-teachers';
 import { auth } from '@/lib/auth';
 import { SCORING_CONFIG } from '@/lib/config/scoring';
+import { checkApiRateLimit } from '@/lib/rate-limit';
 
 /**
  * Job Matching API - Agent 2: Autonomous Headhunter
@@ -45,6 +46,20 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
+    // 0. Rate limiting check
+    const rateLimitResult = await checkApiRateLimit(request);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded',
+          message: rateLimitResult.error,
+          processingTime: Date.now() - startTime,
+        },
+        { status: 429, headers: rateLimitResult.headers }
+      );
+    }
+
     // 1. Parse request body
     const body = await request.json();
     const validationResult = requestSchema.safeParse(body);
@@ -118,14 +133,15 @@ export async function POST(request: NextRequest) {
       failed: result.stats?.failed || 0,
       processingTime,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Job matching API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to process job matches';
 
     return NextResponse.json(
       {
         success: false,
         error: 'Internal server error',
-        message: error.message || 'Failed to process job matches',
+        message: errorMessage,
         processingTime: Date.now() - startTime,
       },
       { status: 500 }

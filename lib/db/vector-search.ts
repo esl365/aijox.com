@@ -252,12 +252,12 @@ export async function hybridTeacherSearch({
   */
 
   // Build WHERE conditions for basic filtering
-  const where: any = {
+  const where: Prisma.TeacherProfileWhereInput = {
     status: 'ACTIVE',
     profileCompleteness: { gte: 60 }
   };
 
-  const orConditions: any[] = [];
+  const orConditions: Prisma.TeacherProfileWhereInput[] = [];
 
   if (subjects && subjects.length > 0) {
     orConditions.push({ subjects: { hasSome: subjects } });

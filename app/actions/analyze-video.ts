@@ -20,7 +20,11 @@ import { getSearchRank } from '@/lib/config/scoring';
 export type AnalysisResult = {
   success: boolean;
   message: string;
-  analysis?: any;
+  analysis?: {
+    overall_score: number;
+    feedback: ReturnType<typeof generateUserFeedback>;
+    completeness: number;
+  } & Partial<VideoAnalysis>;
   error?: string;
 };
 
@@ -128,21 +132,22 @@ export async function analyzeTeacherVideo(profileId: string): Promise<AnalysisRe
       }
     };
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Video analysis failed:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     // Update profile with error status
     await prisma.teacherProfile.update({
       where: { id: profileId },
       data: {
         videoAnalysisStatus: 'FAILED',
-        videoAnalysisError: error.message
+        videoAnalysisError: errorMessage
       }
     }).catch(console.error);
 
     return {
       success: false,
-      error: error.message,
+      error: errorMessage,
       message: 'Video analysis failed. Please try again or contact support.'
     };
   }
@@ -176,7 +181,7 @@ export async function requestVideoReanalysis(): Promise<AnalysisResult> {
     return {
       success: false,
       error: 'Rate limited',
-      message: rateLimitResult.error
+      message: rateLimitResult.error || 'Rate limit exceeded'
     };
   }
 

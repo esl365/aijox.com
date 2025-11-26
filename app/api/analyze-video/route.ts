@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { analyzeTeacherVideo } from '@/app/actions/analyze-video';
 import { auth } from '@/lib/auth';
+import { checkApiRateLimit } from '@/lib/rate-limit';
 
 /**
  * Video Analysis API - Agent 1: AI Screener
@@ -30,6 +31,19 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
+    // 0. Rate limiting check
+    const rateLimitResult = await checkApiRateLimit(request);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded',
+          message: rateLimitResult.error,
+        },
+        { status: 429, headers: rateLimitResult.headers }
+      );
+    }
+
     // 1. Parse request body
     const body = await request.json();
     const validationResult = requestSchema.safeParse(body);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hybridSearch, getSearchFacets } from '@/lib/search/hybrid-search';
+import { checkApiRateLimit } from '@/lib/rate-limit';
 
 /**
  * Hybrid Search API - Phase 2 Task 1.1-1.2
@@ -7,6 +8,18 @@ import { hybridSearch, getSearchFacets } from '@/lib/search/hybrid-search';
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting check
+    const rateLimitResult = await checkApiRateLimit(request);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: rateLimitResult.error,
+        },
+        { status: 429, headers: rateLimitResult.headers }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q') || '';
     const location = searchParams.get('location') || undefined;
@@ -44,10 +57,11 @@ export async function GET(request: NextRequest) {
       page: Math.floor(offset / limit) + 1,
       pageSize: limit,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Search API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Search failed', message: error.message },
+      { error: 'Search failed', message: errorMessage },
       { status: 500 }
     );
   }

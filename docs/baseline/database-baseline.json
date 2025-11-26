@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-11-25T13:14:16.643Z",
+  "userMetrics": {
+    "totalUsers": 19,
+    "teacherProfiles": 8,
+    "recruiterProfiles": 2,
+    "profilesWithVideo": 0,
+    "profileCompleteness": 50
+  },
+  "conversionFunnel": {
+    "signups": 19,
+    "profilesCreated": 10,
+    "jobsViewed": 0,
+    "jobsApplied": 0,
+    "signupToProfile": 53,
+    "profileToView": 0,
+    "viewToApply": 0,
+    "overallConversion": 0
+  },
+  "jobMetrics": {
+    "totalJobs": 14,
+    "activeJobs": 14,
+    "applicationsReceived": 0,
+    "avgApplicationsPerJob": 0,
+    "jobsWithApplications": 0
+  },
+  "performanceMetrics": {}
+}
