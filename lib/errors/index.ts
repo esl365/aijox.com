@@ -13,8 +13,5 @@ export {
 
 export {
   AppError,
-  isAppError,
-  toAppError,
-  formatErrorResponse,
-  logError,
+  handleApiError,
 } from './app-error';

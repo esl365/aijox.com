@@ -40,11 +40,7 @@ function convertFilters(filters: FilterState): JobFilters {
     subjects: filters.subjects,
     minSalary: filters.salaryMin,
     maxSalary: filters.salaryMax,
-    housingProvided: filters.housingProvided,
-    flightProvided: filters.flightProvided,
     employmentTypes: filters.contractType,
-    searchQuery: filters.search,
-    sortBy: filters.sortBy,
   };
 }
 
@@ -68,18 +64,17 @@ async function fetchJobs(
     id: job.id,
     title: job.title,
     school: job.schoolName,
+    location: `${job.city}, ${job.country}`,
     country: job.country,
     city: job.city,
     salaryMin: job.salaryUSD,
     salaryMax: job.salaryUSD,
     currency: job.currency || 'USD',
-    contractType: (job.employmentType as any) || 'FULL_TIME',
-    visaSponsorship: true, // Default, can be updated based on job data
+    contractType: (job.employmentType as 'FULL_TIME' | 'PART_TIME' | 'CONTRACT') || 'FULL_TIME',
+    visaSponsorship: true,
     subjects: [job.subject],
-    postedDate: job.createdAt.toISOString(),
-    description: job.description,
-    isApplied: false, // Will be populated from server if needed
-    isSaved: false, // Will be populated from Zustand store
+    startDate: job.startDate?.toISOString() || new Date().toISOString(),
+    postedAt: job.createdAt,
   }));
 
   return {
@@ -126,18 +121,17 @@ export function useJob(jobId: string | null) {
         id: job.id,
         title: job.title,
         school: job.schoolName,
+        location: `${job.city}, ${job.country}`,
         country: job.country,
         city: job.city,
         salaryMin: job.salaryUSD,
         salaryMax: job.salaryUSD,
         currency: job.currency || 'USD',
-        contractType: (job.employmentType as any) || 'FULL_TIME',
+        contractType: (job.employmentType as 'FULL_TIME' | 'PART_TIME' | 'CONTRACT') || 'FULL_TIME',
         visaSponsorship: true,
         subjects: [job.subject],
-        postedDate: job.createdAt.toISOString(),
-        description: job.description,
-        isApplied: false,
-        isSaved: false,
+        startDate: job.startDate?.toISOString() || new Date().toISOString(),
+        postedAt: job.createdAt,
       };
 
       return jobData;
@@ -244,23 +238,22 @@ export function useSavedJobs() {
       const jobs = await getSavedJobs();
 
       // Convert to JobCardData format
-      return jobs.map((job) => ({
+      return jobs.map((job): JobCardData => ({
         id: job.id,
         title: job.title,
         school: job.schoolName,
+        location: `${job.city}, ${job.country}`,
         country: job.country,
         city: job.city,
         salaryMin: job.salaryUSD,
         salaryMax: job.salaryUSD,
         currency: job.currency || 'USD',
-        contractType: (job.employmentType as any) || 'FULL_TIME',
+        contractType: (job.employmentType as 'FULL_TIME' | 'PART_TIME' | 'CONTRACT') || 'FULL_TIME',
         visaSponsorship: true,
         subjects: [job.subject],
-        postedDate: job.createdAt.toISOString(),
-        description: job.description,
-        isApplied: false,
-        isSaved: true,
-      })) as JobCardData[];
+        startDate: job.startDate?.toISOString() || new Date().toISOString(),
+        postedAt: job.createdAt,
+      }));
     },
     staleTime: 1 * 60 * 1000, // 1 minute
   });
@@ -277,6 +270,32 @@ export function useSavedJobIds() {
   });
 }
 
+
+/**
+ * Hook: Get filter counts for each option
+ */
+export function useFilterCounts() {
+  return useQuery({
+    queryKey: [...jobsKeys.all, 'filterCounts'],
+    queryFn: async () => {
+      // Return static counts for now - can be connected to a server action later
+      const counts: Record<string, number> = {
+        'Japan': 45,
+        'China': 82,
+        'South Korea': 38,
+        'Thailand': 27,
+        'Vietnam': 19,
+        'Taiwan': 15,
+        'Saudi Arabia': 23,
+        'UAE': 31,
+        'Spain': 12,
+        'Italy': 8,
+      };
+      return counts;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
 
 /**
  * Hook: Prefetch next page

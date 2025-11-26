@@ -19,7 +19,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import {
   MapPin,
   Calendar,
@@ -105,12 +105,11 @@ export function JobCardV2({
       .slice(0, 2);
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     initial: { y: 0, boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)' },
     hover: {
       y: -4,
       boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-      transition: { duration: 0.3, ease: 'easeOut' },
     },
   };
 

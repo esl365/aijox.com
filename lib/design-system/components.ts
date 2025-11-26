@@ -32,7 +32,7 @@ export interface HeroSectionProps extends BaseComponentProps {
 export interface CTAButton {
   label: string;
   href: string;
-  variant: 'primary' | 'secondary' | 'outline';
+  variant: 'default' | 'secondary' | 'outline' | 'destructive' | 'ghost' | 'link';
   icon?: ReactNode;
   onClick?: () => void;
 }

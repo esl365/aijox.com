@@ -13,6 +13,5 @@ export {
 
 export {
   notifyTeacherVideoAnalyzed,
-  notifyJobApplication,
-  notifyMatchNotification,
+  notifySchoolNewApplication,
 } from './notifications';

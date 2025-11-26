@@ -114,7 +114,7 @@ export function useProfileReadiness(requiredFields: string[]) {
   }
 
   const missingFields = requiredFields.filter((field) => {
-    const value = profile[field as keyof TeacherProfileSummary];
+    const value = (profile as Record<string, unknown>)[field];
     return !value || (Array.isArray(value) && value.length === 0);
   });
 

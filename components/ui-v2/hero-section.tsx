@@ -85,7 +85,7 @@ export function HeroSection({
   primaryCTA = {
     label: 'Find Teaching Jobs',
     href: '/jobs',
-    variant: 'primary' as const,
+    variant: 'default' as const,
     icon: <ArrowRight className="ml-2 h-4 w-4" />,
   },
   secondaryCTA = {
@@ -171,7 +171,7 @@ export function HeroSection({
           >
             <Button
               size="lg"
-              variant={primaryCTA.variant === 'primary' ? 'default' : 'outline'}
+              variant={primaryCTA.variant}
               asChild
               className="min-w-[200px]"
             >
