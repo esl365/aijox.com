@@ -204,6 +204,13 @@ export async function getJobById(jobId: string) {
       include: {
         school: {
           select: {
+            id: true,
+            schoolName: true,
+            description: true,
+            city: true,
+            country: true,
+            website: true,
+            schoolType: true,
             isVerified: true,
             verifiedAt: true,
           },

@@ -5,21 +5,41 @@ import { useRouter } from 'next/navigation';
 import type { JobPosting } from '@prisma/client';
 import type { Session } from 'next-auth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { validateJobApplication } from '@/app/actions/visa-validation';
 import { useToast } from '@/hooks/use-toast';
-import { SimilarJobs } from '@/components/jobs/SimilarJobs';
 import { ReviewStats } from '@/components/reviews/ReviewStats';
 import { ReviewList } from '@/components/reviews/ReviewList';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
-import { VerifiedBadge } from '@/components/badges/VerifiedBadge';
 import type { ReviewWithAuthor } from '@/app/actions/reviews';
+import { Navigation } from '@/components/shared/navigation';
+import { Footer } from '@/components/shared/footer';
+
+// New Wellfound-style components
+import {
+  CompanyHeader,
+  JobTitleHeader,
+  JobInfoGrid,
+  AboutJobSection,
+  AboutCompanySection,
+  SimilarJobsGrid,
+  StickyApplyBar,
+} from '@/components/job-details';
 
 type JobDetailClientProps = {
   job: JobPosting & {
-    school: { isVerified: boolean; verifiedAt: Date | null } | null;
+    school: {
+      id: string;
+      schoolName: string;
+      description: string | null;
+      city: string;
+      country: string;
+      website: string | null;
+      schoolType: string | null;
+      isVerified: boolean;
+      verifiedAt: Date | null;
+    } | null;
     recruiter: { isVerified: boolean; verifiedAt: Date | null } | null;
   };
   session: Session | null;
@@ -40,26 +60,15 @@ export function JobDetailClient({
   const router = useRouter();
   const { toast } = useToast();
   const [applying, setApplying] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<{
+    canApply: boolean;
+    reason?: string;
+    visaDetails?: {
+      failedRequirements: Array<{ message: string }>;
+    };
+  } | null>(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
-
-  const formatSalary = (salary: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(salary);
-  };
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return 'Not specified';
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(new Date(date));
-  };
+  const [isSaved, setIsSaved] = useState(false);
 
   const handleApply = async () => {
     if (!session) {
@@ -105,370 +114,261 @@ export function JobDetailClient({
     router.push(`/jobs/${job.id}/apply`);
   };
 
+  const handleSave = () => {
+    if (!session) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please login to save this job',
+        variant: 'destructive',
+      });
+      router.push(`/login?callbackUrl=/jobs/${job.id}`);
+      return;
+    }
+
+    setIsSaved(!isSaved);
+    toast({
+      title: isSaved ? 'Removed from saved' : 'Job saved',
+      description: isSaved
+        ? 'This job has been removed from your saved jobs'
+        : 'You can find this job in your saved jobs',
+    });
+  };
+
+  // Build company data for components
+  const companyData = job.school
+    ? {
+        id: job.school.id,
+        name: job.school.schoolName,
+        logo: null,
+        isActivelyHiring: true,
+        isVerified: job.school.isVerified,
+        website: job.school.website,
+        description: job.school.description,
+        city: job.school.city,
+        country: job.school.country,
+        schoolType: job.school.schoolType,
+      }
+    : {
+        id: job.schoolId || '',
+        name: job.schoolName,
+        logo: null,
+        isActivelyHiring: true,
+        isVerified: job.recruiter?.isVerified || false,
+        website: null,
+        description: null,
+        city: job.city,
+        country: job.country,
+        schoolType: null,
+      };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-muted/30">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl">
-            <Button
-              variant="ghost"
-              className="mb-4"
-              onClick={() => router.back()}
-            >
-              ← Back to Jobs
-            </Button>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Navigation */}
+      <Navigation />
 
-            <h1 className="text-4xl font-bold mb-4">{job.title}</h1>
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          className="mb-4 -ml-2"
+          onClick={() => router.back()}
+        >
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Back to Jobs
+        </Button>
 
-            <div className="flex flex-wrap gap-4 text-muted-foreground mb-4">
-              <span className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className="flex items-center gap-2">
-                  {job.schoolName}
-                  {(job.school?.isVerified || job.recruiter?.isVerified) && (
-                    <VerifiedBadge size="sm" variant="compact" />
+        {/* Company Header */}
+        <CompanyHeader
+          company={companyData}
+          onSave={handleSave}
+          onApply={handleApply}
+          isSaved={isSaved}
+          isApplying={applying}
+        />
+
+        {/* Job Title Header */}
+        <JobTitleHeader
+          title={job.title}
+          salary={job.salaryUSD}
+          location={`${job.city}, ${job.country}`}
+          experienceYears={job.minYearsExperience}
+          employmentType={job.employmentType || 'FULL_TIME'}
+          subject={job.subject}
+        />
+
+        {/* Job Info Grid */}
+        <JobInfoGrid
+          contractLength={job.contractLength}
+          startDate={job.startDate}
+          location={{ city: job.city, country: job.country }}
+          visaSponsorship={true}
+          housingProvided={job.housingProvided}
+          flightProvided={job.flightProvided}
+          subjects={job.requiredSubjects || [job.subject]}
+        />
+
+        {/* Validation Result */}
+        {validationResult && !validationResult.canApply && (
+          <Alert variant="destructive" className="my-6">
+            <AlertTitle>Cannot Apply</AlertTitle>
+            <AlertDescription>{validationResult.reason}</AlertDescription>
+            {validationResult.visaDetails && (
+              <div className="mt-4 space-y-2">
+                <p className="font-semibold">Failed Requirements:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  {validationResult.visaDetails.failedRequirements.map(
+                    (req, idx) => (
+                      <li key={idx} className="text-sm">
+                        {req.message}
+                      </li>
+                    )
                   )}
-                </span>
-              </span>
-              <span className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {job.city}, {job.country}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-6">
-              <Badge variant="secondary" className="text-base px-3 py-1">
-                {job.subject}
-              </Badge>
-              {job.minYearsExperience && (
-                <Badge variant="outline" className="text-base px-3 py-1">
-                  {job.minYearsExperience}+ years experience
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-3xl font-bold text-primary">
-                  {formatSalary(job.salaryUSD)}
-                </p>
-                <p className="text-sm text-muted-foreground">per month</p>
+                </ul>
               </div>
-              <Button size="lg" onClick={handleApply} disabled={applying}>
-                {applying ? 'Checking Eligibility...' : 'Apply Now'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+            )}
+          </Alert>
+        )}
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl grid gap-6">
-          {/* Validation Result */}
-          {validationResult && !validationResult.canApply && (
-            <Alert variant="destructive">
-              <AlertTitle>Cannot Apply</AlertTitle>
-              <AlertDescription>{validationResult.reason}</AlertDescription>
-              {validationResult.visaDetails && (
-                <div className="mt-4 space-y-2">
-                  <p className="font-semibold">Failed Requirements:</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    {validationResult.visaDetails.failedRequirements.map(
-                      (req: any, idx: number) => (
-                        <li key={idx} className="text-sm">
-                          {req.message}
-                        </li>
-                      )
-                    )}
-                  </ul>
-                </div>
-              )}
-            </Alert>
-          )}
+        {/* About the Job Section */}
+        <AboutJobSection
+          description={job.description}
+          fullDescriptionHtml={job.fullDescriptionHtml}
+          requirements={job.requirements}
+          benefits={job.benefits}
+          housingProvided={job.housingProvided}
+          flightProvided={job.flightProvided}
+          contractLength={job.contractLength}
+        />
 
-          {/* Benefits */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Benefits & Compensation</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      job.housingProvided
-                        ? 'bg-green-100 text-green-600'
-                        : 'bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium">Housing</p>
-                    <p className="text-sm text-muted-foreground">
-                      {job.housingProvided ? 'Provided' : 'Not provided'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      job.flightProvided
-                        ? 'bg-green-100 text-green-600'
-                        : 'bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium">Flight</p>
-                    <p className="text-sm text-muted-foreground">
-                      {job.flightProvided ? 'Provided' : 'Not provided'}
-                    </p>
-                  </div>
-                </div>
-
-                {job.contractLength && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium">Contract</p>
-                      <p className="text-sm text-muted-foreground">
-                        {job.contractLength} months
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {job.benefits && (
-                <div className="pt-4 border-t">
-                  <p className="font-medium mb-2">Additional Benefits:</p>
-                  <p className="text-muted-foreground whitespace-pre-line">
-                    {job.benefits}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {job.fullDescriptionHtml ? (
-                <div
-                  className="prose prose-gray max-w-none"
-                  dangerouslySetInnerHTML={{ __html: job.fullDescriptionHtml }}
+        {/* Application Instructions (if external) */}
+        {(job.externalApplicationUrl || job.applicationInstructions) && (
+          <div className="my-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+              <svg
+                className="w-5 h-5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
                 />
-              ) : (
-                <p className="whitespace-pre-line text-muted-foreground">
-                  {job.description}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+              </svg>
+              Application Instructions
+            </h3>
+            {job.applicationInstructions && (
+              <p className="text-sm text-blue-800 dark:text-blue-200 mb-4 whitespace-pre-line">
+                {job.applicationInstructions}
+              </p>
+            )}
+            {job.externalApplicationUrl && (
+              <Button asChild className="w-full sm:w-auto">
+                <a
+                  href={job.externalApplicationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Apply via External Link →
+                </a>
+              </Button>
+            )}
+          </div>
+        )}
 
-          {/* Application Instructions (if external) */}
-          {(job.externalApplicationUrl || job.applicationInstructions) && (
-            <Card className="border-blue-200 bg-blue-50/50">
+        {/* About the Company Section */}
+        <AboutCompanySection company={companyData} />
+
+        {/* Similar Jobs */}
+        <SimilarJobsGrid jobId={job.id} limit={6} className="py-8" />
+
+        {/* Reviews Section */}
+        <section className="py-8 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Reviews & Ratings
+            </h2>
+            {session?.user.role === 'TEACHER' && !showReviewForm && (
+              <Button onClick={() => setShowReviewForm(true)}>
+                Write a Review
+              </Button>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Stats Sidebar */}
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  Application Instructions
-                </CardTitle>
+                <CardTitle>Overall Rating</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {job.applicationInstructions && (
-                  <div className="whitespace-pre-line text-sm">
-                    {job.applicationInstructions}
-                  </div>
-                )}
-                {job.externalApplicationUrl && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">
-                      Please apply via the school's application portal:
-                    </p>
-                    <Button asChild className="w-full sm:w-auto">
-                      <a
-                        href={job.externalApplicationUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Apply via External Link →
-                      </a>
-                    </Button>
-                  </div>
-                )}
+              <CardContent>
+                <ReviewStats
+                  averageRating={reviewStats.averageRating}
+                  totalReviews={reviewStats.totalReviews}
+                  ratingDistribution={reviewStats.ratingDistribution}
+                />
               </CardContent>
             </Card>
-          )}
 
-          {/* Requirements */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Requirements</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {job.minYearsExperience && (
+            {/* Reviews List */}
+            <div className="md:col-span-2 space-y-6">
+              {/* Review Form */}
+              {showReviewForm && session?.user.role === 'TEACHER' && (
                 <div>
-                  <p className="font-medium">Experience:</p>
-                  <p className="text-muted-foreground">
-                    Minimum {job.minYearsExperience} years of teaching experience
-                  </p>
-                </div>
-              )}
-
-              {job.requiredSubjects && job.requiredSubjects.length > 0 && (
-                <div>
-                  <p className="font-medium">Subjects:</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {job.requiredSubjects.map((subject, idx) => (
-                      <Badge key={idx} variant="outline">
-                        {subject}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {job.requirements && (
-                <div>
-                  <p className="font-medium mb-2">Additional Requirements:</p>
-                  <p className="text-muted-foreground whitespace-pre-line">
-                    {job.requirements}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Contract Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Contract Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {job.startDate && (
-                <div>
-                  <span className="font-medium">Start Date: </span>
-                  <span className="text-muted-foreground">
-                    {formatDate(job.startDate)}
-                  </span>
-                </div>
-              )}
-              <div>
-                <span className="font-medium">Location: </span>
-                <span className="text-muted-foreground">
-                  {job.city}, {job.country}
-                </span>
-              </div>
-              {job.currency && job.currency !== 'USD' && (
-                <div>
-                  <span className="font-medium">Local Currency: </span>
-                  <span className="text-muted-foreground">{job.currency}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Apply Button (Bottom) */}
-          <Card className="bg-primary/5">
-            <CardContent className="flex items-center justify-between p-6">
-              <div>
-                <p className="text-lg font-semibold mb-1">Ready to apply?</p>
-                <p className="text-sm text-muted-foreground">
-                  We'll check your visa eligibility and guide you through the process
-                </p>
-              </div>
-              <Button size="lg" onClick={handleApply} disabled={applying}>
-                {applying ? 'Checking...' : 'Apply Now'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Similar Jobs */}
-          <SimilarJobs jobId={job.id} limit={3} className="mt-8" />
-
-          {/* Reviews Section */}
-          <div className="mt-12 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Reviews & Ratings</h2>
-              {session?.user.role === 'TEACHER' && !showReviewForm && (
-                <Button onClick={() => setShowReviewForm(true)}>
-                  Write a Review
-                </Button>
-              )}
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Stats Sidebar */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Overall Rating</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ReviewStats
-                    averageRating={reviewStats.averageRating}
-                    totalReviews={reviewStats.totalReviews}
-                    ratingDistribution={reviewStats.ratingDistribution}
+                  <ReviewForm
+                    reviewType="JOB_REVIEW"
+                    jobId={job.id}
+                    schoolId={job.schoolId || undefined}
+                    jobTitle={job.title}
+                    schoolName={job.schoolName}
+                    onSuccess={() => {
+                      setShowReviewForm(false);
+                      router.refresh();
+                    }}
                   />
-                </CardContent>
-              </Card>
-
-              {/* Reviews List */}
-              <div className="md:col-span-2 space-y-6">
-                {/* Review Form */}
-                {showReviewForm && session?.user.role === 'TEACHER' && (
-                  <div>
-                    <ReviewForm
-                      reviewType="JOB_REVIEW"
-                      jobId={job.id}
-                      schoolId={job.schoolId || undefined}
-                      jobTitle={job.title}
-                      schoolName={job.schoolName}
-                      onSuccess={() => {
-                        setShowReviewForm(false);
-                        router.refresh();
-                      }}
-                    />
-                    <div className="mt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowReviewForm(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+                  <div className="mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowReviewForm(false)}
+                    >
+                      Cancel
+                    </Button>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Reviews */}
-                {!showReviewForm && <ReviewList reviews={reviews} />}
-              </div>
+              {/* Reviews */}
+              {!showReviewForm && <ReviewList reviews={reviews} />}
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Sticky Apply Bar (Mobile) */}
+      <StickyApplyBar
+        salary={job.salaryUSD}
+        onApply={handleApply}
+        disabled={applying}
+      />
+
+      {/* Add padding at bottom for sticky bar on mobile */}
+      <div className="h-20 lg:hidden" />
     </div>
   );
 }
