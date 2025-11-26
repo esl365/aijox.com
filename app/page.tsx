@@ -204,10 +204,10 @@ export default async function Home() {
             </Link>
             <ThemeToggle />
             <Link href="/login">
-              <Button variant="ghost" size="sm">Sign In</Button>
+              <Button variant="outline" size="sm" className="bg-white hover:bg-gray-50 border-gray-300">Sign In</Button>
             </Link>
             <Link href="/signup">
-              <Button size="sm">Get Started</Button>
+              <Button size="sm" className="bg-black text-white hover:bg-gray-800">Get Started</Button>
             </Link>
           </nav>
           <div className="flex items-center gap-2 md:hidden">
@@ -305,7 +305,7 @@ export default async function Home() {
               </CardContent>
               <CardFooter>
                 <Link href={`/jobs/${job.id}`} className="w-full">
-                  <Button className="w-full group-hover:bg-primary/90">View Details →</Button>
+                  <Button className="w-full bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">View Details →</Button>
                 </Link>
               </CardFooter>
             </Card>
