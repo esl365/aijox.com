@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { JobPosting } from '@prisma/client';
 import { JobCardV2 } from '@/components/ui-v2/job-card-v2';
-import { QuickApplyModal } from '@/components/ui-v2/quick-apply-modal';
-import { useQuickApply } from '@/lib/stores/ui-store';
 import type { JobCardData } from '@/lib/design-system';
 
 type JobListProps = {
@@ -33,8 +32,8 @@ function toJobCardData(job: JobPosting): JobCardData {
 }
 
 export function JobList({ jobs, emptyMessage = 'No jobs found' }: JobListProps) {
+  const router = useRouter();
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
-  const { open: openQuickApply } = useQuickApply();
 
   const handleSave = (jobId: string) => {
     setSavedJobs((prev) => {
@@ -49,7 +48,8 @@ export function JobList({ jobs, emptyMessage = 'No jobs found' }: JobListProps) 
   };
 
   const handleQuickApply = (jobId: string) => {
-    openQuickApply(jobId);
+    // Navigate to the job apply page
+    router.push(`/jobs/${jobId}/apply`);
   };
 
   if (jobs.length === 0) {
@@ -77,22 +77,17 @@ export function JobList({ jobs, emptyMessage = 'No jobs found' }: JobListProps) 
   }
 
   return (
-    <>
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-        {jobs.map((job) => (
-          <JobCardV2
-            key={job.id}
-            job={toJobCardData(job)}
-            isSaved={savedJobs.has(job.id)}
-            onSave={handleSave}
-            onQuickApply={handleQuickApply}
-            showQuickApply
-          />
-        ))}
-      </div>
-
-      {/* Quick Apply Modal - uses internal store state */}
-      <QuickApplyModal />
-    </>
+    <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+      {jobs.map((job) => (
+        <JobCardV2
+          key={job.id}
+          job={toJobCardData(job)}
+          isSaved={savedJobs.has(job.id)}
+          onSave={handleSave}
+          onQuickApply={handleQuickApply}
+          showQuickApply
+        />
+      ))}
+    </div>
   );
 }
