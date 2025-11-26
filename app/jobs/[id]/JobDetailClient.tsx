@@ -13,8 +13,6 @@ import { ReviewStats } from '@/components/reviews/ReviewStats';
 import { ReviewList } from '@/components/reviews/ReviewList';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
 import type { ReviewWithAuthor } from '@/app/actions/reviews';
-import { Navigation } from '@/components/shared/navigation';
-import { Footer } from '@/components/shared/footer';
 
 // New Wellfound-style components
 import {
@@ -162,10 +160,7 @@ export function JobDetailClient({
       };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Navigation */}
-      <Navigation />
-
+    <>
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back Button */}
@@ -357,9 +352,6 @@ export function JobDetailClient({
         </section>
       </main>
 
-      {/* Footer */}
-      <Footer />
-
       {/* Sticky Apply Bar (Mobile) */}
       <StickyApplyBar
         salary={job.salaryUSD}
@@ -369,6 +361,6 @@ export function JobDetailClient({
 
       {/* Add padding at bottom for sticky bar on mobile */}
       <div className="h-20 lg:hidden" />
-    </div>
+    </>
   );
 }

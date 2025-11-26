@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth';
 import { getJobById } from '@/app/actions/jobs';
 import { getJobReviews, getJobReviewStats } from '@/app/actions/reviews';
 import { JobDetailClient } from './JobDetailClient';
+import { Navigation } from '@/components/shared/navigation';
+import { Footer } from '@/components/shared/footer';
 import {
   generateGoogleJobSchemaScript,
   generateJobOpenGraphMetadata,
@@ -65,11 +67,15 @@ export default async function JobDetailPage({ params }: Props) {
   }
 
   return (
-    <JobDetailClient
-      job={job}
-      session={session}
-      reviews={reviews}
-      reviewStats={reviewStats}
-    />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <Navigation />
+      <JobDetailClient
+        job={job}
+        session={session}
+        reviews={reviews}
+        reviewStats={reviewStats}
+      />
+      <Footer />
+    </div>
   );
 }
