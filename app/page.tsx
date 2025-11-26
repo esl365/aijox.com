@@ -8,7 +8,16 @@ import { Globe, Users, Briefcase, Sparkles, Shield, Lock, CheckCircle, Graduatio
 import { Footer } from '@/components/shared/footer';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { MobileNav } from '@/components/mobile/mobile-nav';
-import { HeroSection } from '@/components/ui-v2/hero-section';
+import {
+  AnnouncementBar,
+  HeroSection,
+  SocialProofSection,
+  ValuePropositionSection,
+  TestimonialsSection,
+  CTACardsSection,
+  FeaturedBanner,
+  BlogSection,
+} from '@/components/home';
 import { prisma } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -115,12 +124,6 @@ export default async function Home() {
     })
   ]);
 
-  const getSchoolEmoji = (type: string | null) => {
-    if (!type) return '🏫';
-    if (type.includes('British') || type.includes('IB')) return '🎓';
-    return '🏫';
-  };
-
   // Structured Data for SEO/GEO/AEO
   const structuredData = {
     "@context": "https://schema.org",
@@ -165,35 +168,46 @@ export default async function Home() {
     ]
   };
 
-  // Social proof metrics for HeroSection
-  const socialProof = [
-    { value: stats.teachers || 10000, label: 'Teachers', icon: <Users className="h-5 w-5" /> },
-    { value: stats.schools || 500, label: 'Schools', icon: <GraduationCap className="h-5 w-5" /> },
-    { value: stats.countries || 50, label: 'Countries', icon: <Globe className="h-5 w-5" /> },
+  // Social proof metrics
+  const socialProofMetrics = [
+    { value: stats.teachers || 10000, label: 'Teachers Matched', suffix: '+', icon: <Users className="h-6 w-6" /> },
+    { value: stats.schools || 500, label: 'Partner Schools', suffix: '+', icon: <GraduationCap className="h-6 w-6" /> },
+    { value: stats.countries || 50, label: 'Countries', suffix: '', icon: <Globe className="h-6 w-6" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-      {/* Header with Mobile Navigation */}
-      <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50 dark:bg-gray-900/95 dark:border-gray-800">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      {/* Announcement Bar */}
+      <AnnouncementBar
+        message="Introducing AI Video Analysis: Get instant feedback on your teaching demo"
+        linkText="Try it now"
+        linkHref="/dashboard/video"
+        variant="gradient"
+      />
+
+      {/* Header */}
+      <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50 dark:bg-gray-950/95 dark:border-gray-800">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Globe className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold">Global Educator Nexus</h1>
+            <h1 className="text-xl font-bold">Global Educator Nexus</h1>
           </Link>
-          <nav className="hidden md:flex items-center gap-4">
-            <Link href="/jobs">
-              <Button variant="ghost">Find Jobs</Button>
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="/jobs" className="text-sm font-medium hover:text-primary transition-colors">
+              Find Jobs
             </Link>
-            <Link href="/schools">
-              <Button variant="ghost">Schools</Button>
+            <Link href="/schools" className="text-sm font-medium hover:text-primary transition-colors">
+              Schools
+            </Link>
+            <Link href="/blog" className="text-sm font-medium hover:text-primary transition-colors">
+              Blog
             </Link>
             <ThemeToggle />
             <Link href="/login">
-              <Button variant="outline">Sign In</Button>
+              <Button variant="ghost" size="sm">Sign In</Button>
             </Link>
             <Link href="/signup">
-              <Button>Get Started</Button>
+              <Button size="sm">Get Started</Button>
             </Link>
           </nav>
           <div className="flex items-center gap-2 md:hidden">
@@ -203,29 +217,46 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* New Animated Hero Section */}
+      {/* Hero Section - Wellfound style */}
       <HeroSection
-        headline="Find Your Next Teaching Adventure"
-        socialProof={socialProof}
+        headline="Find your next"
+        rotatingWords={[
+          'teaching career',
+          'dream school',
+          'perfect match',
+          'global adventure',
+          'next opportunity',
+        ]}
+        subheadline="Connect with top international schools worldwide. AI-powered matching to find your perfect teaching position."
+        primaryCTA={{ label: 'Browse Jobs', href: '/jobs' }}
+        secondaryCTA={{ label: "I'm Hiring", href: '/recruiter' }}
       />
 
-      {/* Featured Schools Showcase */}
-      <section className="bg-muted/50 py-12">
-        <div className="container mx-auto px-4">
-          <p className="text-center text-sm text-muted-foreground mb-8 uppercase tracking-wider">
-            Trusted by Leading International Schools
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 max-w-6xl mx-auto">
-            {schools.map(school => (
-              <Link key={school.id} href={`/schools/${school.id}`} className="text-center hover:opacity-75 transition-opacity">
-                <div className="text-5xl mb-3">{getSchoolEmoji(school.schoolType)}</div>
-                <p className="text-sm font-medium line-clamp-2">{school.schoolName}</p>
-                <p className="text-xs text-muted-foreground">{school.city}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Social Proof Section */}
+      <SocialProofSection
+        metrics={socialProofMetrics}
+        showLogos={true}
+      />
+
+      {/* Value Proposition Section */}
+      <ValuePropositionSection
+        teacherCard={{
+          features: [
+            'AI-powered job matching',
+            'One-click applications',
+            'Visa sponsorship filter',
+            'Video demo analysis',
+          ],
+        }}
+        recruiterCard={{
+          features: [
+            'Smart candidate matching',
+            'Video screening insights',
+            'Automated outreach',
+            'Talent pipeline management',
+          ],
+        }}
+      />
 
       {/* Latest Jobs Preview */}
       <section className="container mx-auto px-4 py-20">
@@ -267,8 +298,8 @@ export default async function Home() {
                     <Badge variant="secondary">{job.subject}</Badge>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {job.housingProvided && <Badge variant="outline" className="text-xs">🏠 Housing</Badge>}
-                    {job.flightProvided && <Badge variant="outline" className="text-xs">✈️ Flight</Badge>}
+                    {job.housingProvided && <Badge variant="outline" className="text-xs">Housing</Badge>}
+                    {job.flightProvided && <Badge variant="outline" className="text-xs">Flight</Badge>}
                   </div>
                 </div>
               </CardContent>
@@ -290,126 +321,25 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Trust Signals */}
-      <section className="bg-primary text-primary-foreground py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div className="flex flex-col items-center">
-              <Shield className="h-12 w-12 mb-3" />
-              <h3 className="font-semibold mb-1">100% Verified Schools</h3>
-              <p className="text-sm opacity-90">All institutions background-checked</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <Lock className="h-12 w-12 mb-3" />
-              <h3 className="font-semibold mb-1">Secure & Private</h3>
-              <p className="text-sm opacity-90">Your data is encrypted and protected</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <CheckCircle className="h-12 w-12 mb-3" />
-              <h3 className="font-semibold mb-1">100% Free for Teachers</h3>
-              <p className="text-sm opacity-90">No hidden fees, ever</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <Sparkles className="h-12 w-12 mb-3" />
-              <h3 className="font-semibold mb-1">AI-Powered Matching</h3>
-              <p className="text-sm opacity-90">Smart recommendations just for you</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Testimonials Section */}
+      <TestimonialsSection autoplay={true} autoplayDelay={5000} />
 
-      {/* Enhanced Features Section */}
-      <section className="container mx-auto px-4 py-20">
-        <h2 className="text-4xl font-bold text-center mb-4">
-          Why Choose Global Educator Nexus?
-        </h2>
-        <p className="text-center text-muted-foreground text-lg mb-12">
-          The only platform with AI-powered video analysis, autonomous matching, and instant visa validation
-        </p>
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card className="relative overflow-hidden hover:shadow-xl transition-shadow">
-            <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
-              UNIQUE
-            </div>
-            <CardHeader>
-              <Sparkles className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>AI Video Analysis</CardTitle>
-              <CardDescription>
-                Upload your teaching demonstration and receive instant AI-powered feedback on presentation skills, body language, and communication effectiveness. No other platform offers this.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Link href="/features">
-                <Button variant="link" className="p-0">Learn how it works →</Button>
-              </Link>
-            </CardFooter>
-          </Card>
+      {/* CTA Cards Section */}
+      <CTACardsSection />
 
-          <Card className="relative overflow-hidden hover:shadow-xl transition-shadow">
-            <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
-              UNIQUE
-            </div>
-            <CardHeader>
-              <Users className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>Autonomous Headhunter AI</CardTitle>
-              <CardDescription>
-                Our AI actively searches for perfect job matches and emails you personalized opportunities. You don't search for jobs – jobs find you.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Link href="/how-it-works">
-                <Button variant="link" className="p-0">See how matching works →</Button>
-              </Link>
-            </CardFooter>
-          </Card>
+      {/* Featured Banner */}
+      <FeaturedBanner
+        headline="10 out of 10"
+        subheadline="teachers recommend Global Educator Nexus to their colleagues"
+        cta={{ label: 'Join Today', href: '/signup' }}
+        rating="4.9/5"
+      />
 
-          <Card className="relative overflow-hidden hover:shadow-xl transition-shadow">
-            <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
-              UNIQUE
-            </div>
-            <CardHeader>
-              <Globe className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>Instant Visa Eligibility</CardTitle>
-              <CardDescription>
-                Know immediately which countries you can legally work in based on nationality, qualifications, age, and background. No more wasted applications.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Link href="/features">
-                <Button variant="link" className="p-0">Check your eligibility →</Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        </div>
-      </section>
-
-      {/* Real Stats Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 text-white py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Platform Statistics</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-5xl font-bold mb-2">{stats.countries}+</div>
-              <div className="text-sm opacity-90">Countries</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold mb-2">{stats.jobs}</div>
-              <div className="text-sm opacity-90">Active Jobs</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold mb-2">{stats.teachers}+</div>
-              <div className="text-sm opacity-90">Teachers</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold mb-2">{stats.schools}</div>
-              <div className="text-sm opacity-90">Verified Schools</div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Blog Section */}
+      <BlogSection />
 
       {/* FAQ for AEO */}
-      <section className="container mx-auto px-4 py-20">
+      <section className="container mx-auto px-4 py-20 bg-white dark:bg-gray-950">
         <h2 className="text-4xl font-bold text-center mb-12">
           Frequently Asked Questions
         </h2>
@@ -455,28 +385,6 @@ export default async function Home() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="text-4xl font-bold">Ready to Start Your Teaching Journey?</h2>
-          <p className="text-xl text-muted-foreground">
-            Join {stats.teachers}+ educators finding their dream teaching positions abroad.
-          </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <Link href="/signup?role=teacher">
-              <Button size="lg" className="text-lg px-8 py-6">
-                Create Free Teacher Account
-              </Button>
-            </Link>
-            <Link href="/jobs">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6">
-                Browse {stats.jobs} Jobs
-              </Button>
-            </Link>
-          </div>
-        </div>
       </section>
 
       {/* Structured Data Injection */}
