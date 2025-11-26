@@ -36,6 +36,7 @@ type JobFiltersEnhancedProps = {
     employmentTypes: string[];
     salaryRange: { min: number; max: number };
   };
+  variant?: 'sidebar' | 'inline';
 };
 
 const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
@@ -54,7 +55,7 @@ const SORT_OPTIONS = [
   { value: 'experience', label: 'Experience Required' },
 ];
 
-export function JobFiltersEnhanced({ onFilterChange, filterOptions }: JobFiltersEnhancedProps) {
+export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 'sidebar' }: JobFiltersEnhancedProps) {
   const [filters, setFilters] = useState<JobFiltersType>({
     sortBy: 'newest',
   });

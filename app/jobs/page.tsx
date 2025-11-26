@@ -1,11 +1,16 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { JobsPageClient } from './JobsPageClient';
-import { getJobFilterOptions, getJobStatsByCountry } from '@/app/actions/jobs';
+import { getJobFilterOptions } from '@/app/actions/jobs';
 import { Navigation } from '@/components/shared/navigation';
+import { JobsHero } from '@/components/jobs/jobs-hero';
+import { TrendingSchools } from '@/components/jobs/trending-schools';
+import { JobsGetStartedCTA } from '@/components/jobs/jobs-get-started-cta';
+import { Footer } from '@/components/shared/footer';
+import { prisma } from '@/lib/db';
 
 export const metadata: Metadata = {
-  title: 'Browse International Teaching Jobs',
+  title: 'Browse International Teaching Jobs | Global Educator Nexus',
   description: 'Find verified teaching positions in Asia and Middle East. Filter by country, subject, and salary. Housing and flight benefits available.',
   openGraph: {
     title: 'International Teaching Jobs - Global Educator Nexus',
@@ -13,61 +18,68 @@ export const metadata: Metadata = {
   }
 };
 
-async function JobsStats() {
-  const stats = await getJobStatsByCountry();
+async function getTotalJobs() {
+  const count = await prisma.jobPosting.count({
+    where: { status: 'ACTIVE' }
+  });
+  return count;
+}
 
-  if (stats.length === 0) return null;
+async function getTrendingSchoolsData() {
+  const schools = await prisma.schoolProfile.findMany({
+    where: { isVerified: true },
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: {
+        select: { jobPostings: { where: { status: 'ACTIVE' } } }
+      }
+    }
+  });
 
-  return (
-    <div className="bg-muted/50 rounded-lg p-6 mb-6">
-      <h2 className="text-lg font-semibold mb-4">Jobs by Country</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {stats.slice(0, 10).map((stat) => (
-          <div key={stat.country} className="text-center">
-            <p className="text-2xl font-bold text-primary">{stat.count}</p>
-            <p className="text-sm text-muted-foreground">{stat.country}</p>
-            <p className="text-xs text-muted-foreground">
-              Avg ${stat.avgSalary.toLocaleString()}/mo
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return schools.map(school => ({
+    id: school.id,
+    name: school.schoolName,
+    tagline: school.description?.slice(0, 50) || 'International School',
+    location: `${school.city}, ${school.country}`,
+    tags: [school.schoolType || 'International', 'K-12'].filter(Boolean),
+    openPositions: school._count.jobPostings,
+  }));
 }
 
 export default async function JobsPage() {
-  // Fetch filter options on server
-  const filterOptions = await getJobFilterOptions();
+  // Fetch data in parallel
+  const [filterOptions, totalJobs, trendingSchools] = await Promise.all([
+    getJobFilterOptions(),
+    getTotalJobs(),
+    getTrendingSchoolsData(),
+  ]);
 
   return (
-    <>
+    <div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Navigation Header */}
       <Navigation />
 
-      <div className="min-h-screen bg-background">
-        {/* Page Header */}
-        <div className="border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
-          <div className="container mx-auto px-4 py-12">
-            <h1 className="text-4xl font-bold mb-2">
-              International Teaching Jobs
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Verified positions with competitive salaries and benefits
-            </p>
-          </div>
-        </div>
+      {/* Hero Section with Search */}
+      <Suspense fallback={<div className="h-48 bg-gray-50 dark:bg-gray-900 animate-pulse" />}>
+        <JobsHero totalJobs={totalJobs} />
+      </Suspense>
 
-        <div className="container mx-auto px-4 py-8">
-          {/* Stats Section */}
-          <Suspense fallback={<div className="h-32 bg-muted/20 rounded-lg mb-6 animate-pulse" />}>
-            <JobsStats />
-          </Suspense>
+      {/* Trending Schools */}
+      <Suspense fallback={<div className="h-64 bg-white dark:bg-gray-950 animate-pulse" />}>
+        <TrendingSchools schools={trendingSchools} />
+      </Suspense>
 
-          {/* Main Content */}
-          <JobsPageClient filterOptions={filterOptions} />
-        </div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <JobsPageClient filterOptions={filterOptions} />
       </div>
-    </>
+
+      {/* Get Started CTA */}
+      <JobsGetStartedCTA />
+
+      {/* Footer */}
+      <Footer />
+    </div>
   );
 }
