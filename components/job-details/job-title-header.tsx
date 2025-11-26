@@ -34,22 +34,23 @@ export function JobTitleHeader({
   };
 
   return (
-    <div className="py-6">
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+    <div className="py-8">
+      {/* Job Title - Much Larger */}
+      <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
         {title}
       </h1>
 
-      {/* Compensation & Location */}
-      <div className="flex flex-wrap items-center gap-2 text-gray-600 dark:text-gray-400 mb-3">
-        <span className="font-semibold text-lg text-gray-900 dark:text-white">
+      {/* Compensation & Location - Larger */}
+      <div className="flex flex-wrap items-center gap-3 text-lg text-gray-600 dark:text-gray-400 mb-4">
+        <span className="font-bold text-2xl text-gray-900 dark:text-white">
           {formatSalary(salary)}/mo
         </span>
 
-        <span className="text-gray-300 dark:text-gray-600">•</span>
+        <span className="text-gray-300 dark:text-gray-600 text-2xl">•</span>
 
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5 text-lg">
           <svg
-            className="w-4 h-4"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -71,22 +72,22 @@ export function JobTitleHeader({
         </span>
       </div>
 
-      {/* Requirements */}
-      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+      {/* Requirements - Larger Badges */}
+      <div className="flex flex-wrap items-center gap-3 text-base text-gray-500 dark:text-gray-400">
         {experienceYears && experienceYears > 0 && (
           <>
-            <span>{experienceYears}+ years experience required</span>
+            <span className="text-base">{experienceYears}+ years experience required</span>
             <span className="text-gray-300 dark:text-gray-600">•</span>
           </>
         )}
 
-        <Badge variant="secondary" className="font-medium">
+        <Badge variant="secondary" className="font-semibold text-sm px-3 py-1">
           {formatEmploymentType(employmentType)}
         </Badge>
 
         <span className="text-gray-300 dark:text-gray-600">•</span>
 
-        <Badge variant="outline" className="font-medium">
+        <Badge variant="outline" className="font-semibold text-sm px-3 py-1">
           {subject}
         </Badge>
       </div>

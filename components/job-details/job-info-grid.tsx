@@ -98,28 +98,28 @@ export function JobInfoGrid({
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 py-6 border-y border-gray-200 dark:border-gray-800">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 py-8 border-y border-gray-200 dark:border-gray-800">
       {gridItems.map((item, index) => (
-        <div key={index} className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-gray-400">
-            {item.icon}
-            <p className="text-[10px] uppercase tracking-wide font-medium">
+        <div key={index} className="space-y-2">
+          <div className="flex items-center gap-2 text-gray-400">
+            <span className="[&>svg]:w-5 [&>svg]:h-5">{item.icon}</span>
+            <p className="text-xs uppercase tracking-wider font-semibold">
               {item.label}
             </p>
           </div>
 
           {'tags' in item && item.tags ? (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
               {item.tags.slice(0, 2).map((tag, i) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-md"
+                  className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md"
                 >
                   {tag}
                 </span>
               ))}
               {item.tags.length > 2 && (
-                <span className="px-2 py-0.5 text-gray-400 text-xs">
+                <span className="px-2.5 py-1 text-gray-400 text-sm">
                   +{item.tags.length - 2}
                 </span>
               )}
@@ -127,7 +127,7 @@ export function JobInfoGrid({
           ) : (
             <p
               className={cn(
-                'text-sm font-semibold text-gray-900 dark:text-white truncate',
+                'text-base font-semibold text-gray-900 dark:text-white',
                 item.highlight && 'text-green-600 dark:text-green-400'
               )}
             >

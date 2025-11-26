@@ -46,31 +46,31 @@ export function AboutJobSection({
     : [];
 
   return (
-    <section className="py-8">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+    <section className="py-10">
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
         About the job
       </h2>
 
       {/* Full description if available */}
       {fullDescriptionHtml ? (
         <div
-          className="prose prose-gray dark:prose-invert max-w-none mb-8 prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-400 prose-li:text-gray-600 dark:prose-li:text-gray-400"
+          className="prose prose-lg prose-gray dark:prose-invert max-w-none mb-10 prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-400 prose-li:text-gray-600 dark:prose-li:text-gray-400 prose-p:text-base prose-li:text-base prose-p:leading-relaxed"
           dangerouslySetInnerHTML={{ __html: fullDescriptionHtml }}
         />
       ) : (
-        <p className="text-gray-600 dark:text-gray-400 mb-8 whitespace-pre-line">
+        <p className="text-base text-gray-600 dark:text-gray-400 mb-10 whitespace-pre-line leading-relaxed">
           {description}
         </p>
       )}
 
       {/* Three-column grid */}
-      <div className="grid md:grid-cols-3 gap-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <div className="grid md:grid-cols-3 gap-10 pt-8 border-t border-gray-200 dark:border-gray-800">
         {/* Responsibilities */}
         {responsibilitiesList.length > 0 && (
           <div>
-            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-5 flex items-center gap-2">
               <svg
-                className="w-5 h-5 text-blue-500"
+                className="w-6 h-6 text-blue-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -84,14 +84,14 @@ export function AboutJobSection({
               </svg>
               Responsibilities
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {responsibilitiesList.map((item, index) => (
                 <li
                   key={index}
-                  className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
+                  className="flex items-start gap-3 text-base text-gray-600 dark:text-gray-400"
                 >
-                  <span className="text-gray-400 mt-1">•</span>
-                  <span>{item}</span>
+                  <span className="text-gray-400 mt-1 text-lg">•</span>
+                  <span className="leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
@@ -101,9 +101,9 @@ export function AboutJobSection({
         {/* Requirements */}
         {requirementsList.length > 0 && (
           <div>
-            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-5 flex items-center gap-2">
               <svg
-                className="w-5 h-5 text-orange-500"
+                className="w-6 h-6 text-orange-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -117,14 +117,14 @@ export function AboutJobSection({
               </svg>
               Requirements
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {requirementsList.map((item, index) => (
                 <li
                   key={index}
-                  className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
+                  className="flex items-start gap-3 text-base text-gray-600 dark:text-gray-400"
                 >
-                  <span className="text-gray-400 mt-1">•</span>
-                  <span>{item}</span>
+                  <span className="text-gray-400 mt-1 text-lg">•</span>
+                  <span className="leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
@@ -134,9 +134,9 @@ export function AboutJobSection({
         {/* Benefits */}
         {benefitsList.length > 0 && (
           <div>
-            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-5 flex items-center gap-2">
               <svg
-                className="w-5 h-5 text-green-500"
+                className="w-6 h-6 text-green-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -150,14 +150,14 @@ export function AboutJobSection({
               </svg>
               Benefits
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {benefitsList.map((item, index) => (
                 <li
                   key={index}
-                  className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
+                  className="flex items-start gap-3 text-base text-gray-600 dark:text-gray-400"
                 >
                   <svg
-                    className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0"
+                    className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -167,7 +167,7 @@ export function AboutJobSection({
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span>{item}</span>
+                  <span className="leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>

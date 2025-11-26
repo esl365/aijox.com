@@ -44,27 +44,27 @@ export function AboutCompanySection({ company }: AboutCompanySectionProps) {
   ];
 
   return (
-    <section className="py-8">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+    <section className="py-10">
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
         About {company.name}
       </h2>
 
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 shadow-sm">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-5">
             {/* Logo */}
-            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
               {company.logo ? (
                 <Image
                   src={company.logo}
                   alt={company.name}
-                  width={48}
-                  height={48}
+                  width={64}
+                  height={64}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-lg font-bold text-white">
+                <span className="text-2xl font-bold text-white">
                   {company.name.charAt(0)}
                 </span>
               )}
@@ -73,7 +73,7 @@ export function AboutCompanySection({ company }: AboutCompanySectionProps) {
             {/* Info */}
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                   {company.name}
                 </h3>
                 {company.isVerified && (
@@ -90,24 +90,24 @@ export function AboutCompanySection({ company }: AboutCompanySectionProps) {
                   </svg>
                 )}
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-base text-gray-500 dark:text-gray-400">
                 {company.city}, {company.country}
               </p>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {company.website && (
               <a
                 href={company.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1"
+                className="text-base text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1.5 font-medium"
               >
                 Website
                 <svg
-                  className="w-3 h-3"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -123,11 +123,11 @@ export function AboutCompanySection({ company }: AboutCompanySectionProps) {
             )}
             <Link
               href={`/schools/${company.id}`}
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center gap-1"
+              className="text-base text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center gap-1.5 font-medium"
             >
               View Profile
               <svg
-                className="w-3 h-3"
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -145,19 +145,19 @@ export function AboutCompanySection({ company }: AboutCompanySectionProps) {
 
         {/* Description */}
         {company.description && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 line-clamp-3">
+          <p className="text-base text-gray-600 dark:text-gray-400 mb-8 line-clamp-3 leading-relaxed">
             {company.description}
           </p>
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+        <div className="grid grid-cols-4 gap-6 pt-6 border-t border-gray-100 dark:border-gray-800">
           {stats.map((stat, index) => (
             <div key={index} className="text-center">
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stat.value}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {stat.label}
               </p>
             </div>

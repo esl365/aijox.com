@@ -27,20 +27,20 @@ export function CompanyHeader({
   isApplying = false,
 }: CompanyHeaderProps) {
   return (
-    <div className="flex items-center justify-between py-6 border-b border-gray-200 dark:border-gray-800">
-      <div className="flex items-center gap-4">
-        {/* Company Logo */}
-        <div className="w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-8 border-b border-gray-200 dark:border-gray-800">
+      <div className="flex items-center gap-5">
+        {/* Company Logo - Larger */}
+        <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
           {company.logo ? (
             <Image
               src={company.logo}
               alt={company.name}
-              width={64}
-              height={64}
+              width={80}
+              height={80}
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-2xl font-bold text-white">
+            <span className="text-3xl font-bold text-white">
               {company.name.charAt(0)}
             </span>
           )}
@@ -52,12 +52,12 @@ export function CompanyHeader({
             href={`/schools/${company.id}`}
             className="hover:underline inline-flex items-center gap-2"
           >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {company.name}
             </h2>
             {company.isVerified && (
               <svg
-                className="w-5 h-5 text-blue-500"
+                className="w-6 h-6 text-blue-500"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -71,28 +71,28 @@ export function CompanyHeader({
           </Link>
 
           {company.isActivelyHiring && (
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs font-medium rounded-full mt-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-sm font-medium rounded-full mt-2">
+              <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
               Actively Hiring
             </div>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-3">
+      {/* Action Buttons - Larger */}
+      <div className="flex items-center gap-4 w-full sm:w-auto">
         {onSave && (
           <Button
             variant="outline"
-            size="sm"
+            size="lg"
             onClick={onSave}
             className={cn(
-              'gap-2',
+              'gap-2 text-base font-semibold px-6 h-12 flex-1 sm:flex-none',
               isSaved && 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700'
             )}
           >
             <svg
-              className={cn('w-4 h-4', isSaved && 'fill-current')}
+              className={cn('w-5 h-5', isSaved && 'fill-current')}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -109,12 +109,12 @@ export function CompanyHeader({
         )}
 
         <Button
-          size="sm"
+          size="lg"
           onClick={onApply}
           disabled={isApplying}
-          className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+          className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 text-base font-semibold px-8 h-12 flex-1 sm:flex-none"
         >
-          {isApplying ? 'Checking...' : 'Apply'}
+          {isApplying ? 'Checking...' : 'Apply Now'}
         </Button>
       </div>
     </div>
