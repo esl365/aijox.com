@@ -2,14 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Globe, Users, Briefcase, Sparkles, Search, Shield, Lock, CheckCircle } from 'lucide-react';
+import { Globe, Users, Briefcase, Sparkles, Shield, Lock, CheckCircle, GraduationCap } from 'lucide-react';
 import { Footer } from '@/components/shared/footer';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { MobileNav } from '@/components/mobile/mobile-nav';
+import { HeroSection } from '@/components/ui-v2/hero-section';
 import { prisma } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -166,6 +165,13 @@ export default async function Home() {
     ]
   };
 
+  // Social proof metrics for HeroSection
+  const socialProof = [
+    { value: stats.teachers || 10000, label: 'Teachers', icon: <Users className="h-5 w-5" /> },
+    { value: stats.schools || 500, label: 'Schools', icon: <GraduationCap className="h-5 w-5" /> },
+    { value: stats.countries || 50, label: 'Countries', icon: <Globe className="h-5 w-5" /> },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header with Mobile Navigation */}
@@ -197,70 +203,11 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* Hero Section with Search */}
-      <section className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Find Your Dream <span className="text-primary">Teaching Job</span> Abroad
-            </h2>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-2">
-              {stats.jobs} verified positions at {stats.schools} international schools across {stats.countries} countries
-            </p>
-            <p className="text-lg text-muted-foreground">
-              AI-powered matching • Instant visa eligibility • Free for teachers
-            </p>
-          </div>
-
-          {/* Prominent Search Bar */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 md:p-8">
-            <form action="/jobs" method="GET" className="space-y-4">
-              <div className="grid md:grid-cols-[1fr_auto_auto] gap-4">
-                <Input
-                  type="text"
-                  name="q"
-                  placeholder="Job title, subject, or keyword..."
-                  className="h-14 text-lg"
-                />
-                <Link href="/jobs">
-                  <Button type="button" size="lg" className="h-14 w-full md:w-auto px-8">
-                    <Search className="mr-2 h-5 w-5" />
-                    Search Jobs
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Quick Country Links */}
-              <div className="flex gap-2 flex-wrap items-center">
-                <span className="text-sm text-muted-foreground">Popular:</span>
-                {['South Korea', 'China', 'UAE', 'Japan', 'Singapore'].map(country => (
-                  <Link key={country} href={`/jobs?country=${encodeURIComponent(country)}`}>
-                    <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
-                      {country}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            </form>
-          </div>
-
-          {/* Quick Action Buttons */}
-          <div className="flex gap-4 justify-center mt-8">
-            <Link href="/signup?role=teacher">
-              <Button size="lg" className="gap-2">
-                <Users className="h-5 w-5" />
-                I'm a Teacher
-              </Button>
-            </Link>
-            <Link href="/signup?role=recruiter">
-              <Button size="lg" variant="outline" className="gap-2">
-                <Briefcase className="h-5 w-5" />
-                I'm Hiring
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* New Animated Hero Section */}
+      <HeroSection
+        headline="Find Your Next Teaching Adventure"
+        socialProof={socialProof}
+      />
 
       {/* Featured Schools Showcase */}
       <section className="bg-muted/50 py-12">
@@ -296,10 +243,10 @@ export default async function Home() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {recentJobs.map(job => (
-            <Card key={job.id} className="hover:shadow-lg transition-shadow">
+            <Card key={job.id} className="hover:shadow-lg transition-shadow group">
               <CardHeader>
                 <div className="flex justify-between items-start gap-2 mb-2">
-                  <CardTitle className="text-lg line-clamp-2">{job.title}</CardTitle>
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">{job.title}</CardTitle>
                   <Badge variant="outline" className="text-xs whitespace-nowrap">
                     {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
                   </Badge>
@@ -327,7 +274,7 @@ export default async function Home() {
               </CardContent>
               <CardFooter>
                 <Link href={`/jobs/${job.id}`} className="w-full">
-                  <Button className="w-full">View Details →</Button>
+                  <Button className="w-full group-hover:bg-primary/90">View Details →</Button>
                 </Link>
               </CardFooter>
             </Card>
@@ -380,7 +327,7 @@ export default async function Home() {
           The only platform with AI-powered video analysis, autonomous matching, and instant visa validation
         </p>
         <div className="grid md:grid-cols-3 gap-8">
-          <Card className="relative overflow-hidden">
+          <Card className="relative overflow-hidden hover:shadow-xl transition-shadow">
             <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
               UNIQUE
             </div>
@@ -398,7 +345,7 @@ export default async function Home() {
             </CardFooter>
           </Card>
 
-          <Card className="relative overflow-hidden">
+          <Card className="relative overflow-hidden hover:shadow-xl transition-shadow">
             <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
               UNIQUE
             </div>
@@ -416,7 +363,7 @@ export default async function Home() {
             </CardFooter>
           </Card>
 
-          <Card className="relative overflow-hidden">
+          <Card className="relative overflow-hidden hover:shadow-xl transition-shadow">
             <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-3 py-1 text-xs font-bold rounded-bl-lg">
               UNIQUE
             </div>

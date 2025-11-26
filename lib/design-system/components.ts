@@ -20,12 +20,12 @@ export interface BaseComponentProps {
  * FR-001: Enhanced Hero Section
  */
 export interface HeroSectionProps extends BaseComponentProps {
-  headline: string;
-  subheadlines: string[]; // Rotating subheadlines
-  primaryCTA: CTAButton;
-  secondaryCTA: CTAButton;
-  socialProof: SocialProofMetric[];
-  quickNavigationCards: QuickNavCard[];
+  headline?: string;
+  subheadlines?: string[]; // Rotating subheadlines
+  primaryCTA?: CTAButton;
+  secondaryCTA?: CTAButton;
+  socialProof?: SocialProofMetric[];
+  quickNavigationCards?: QuickNavCard[];
   backgroundElements?: ReactNode;
 }
 

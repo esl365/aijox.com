@@ -1,12 +1,57 @@
+'use client';
+
+import { useState } from 'react';
 import type { JobPosting } from '@prisma/client';
-import { JobCard } from './JobCard';
+import { JobCardV2 } from '@/components/ui-v2/job-card-v2';
+import { QuickApplyModal } from '@/components/ui-v2/quick-apply-modal';
+import { useQuickApply } from '@/lib/stores/ui-store';
+import type { JobCardData } from '@/lib/design-system';
 
 type JobListProps = {
   jobs: JobPosting[];
   emptyMessage?: string;
 };
 
+// Convert JobPosting to JobCardData
+function toJobCardData(job: JobPosting): JobCardData {
+  return {
+    id: job.id,
+    title: job.title,
+    school: job.schoolName,
+    location: `${job.city}, ${job.country}`,
+    country: job.country,
+    city: job.city,
+    salaryMin: job.salaryUSD,
+    salaryMax: job.salaryUSD,
+    currency: job.currency || 'USD',
+    contractType: (job.employmentType as 'FULL_TIME' | 'PART_TIME' | 'CONTRACT') || 'FULL_TIME',
+    visaSponsorship: true,
+    subjects: [job.subject],
+    startDate: job.startDate?.toISOString() || new Date().toISOString(),
+    postedAt: job.createdAt,
+  };
+}
+
 export function JobList({ jobs, emptyMessage = 'No jobs found' }: JobListProps) {
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+  const { open: openQuickApply } = useQuickApply();
+
+  const handleSave = (jobId: string) => {
+    setSavedJobs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleQuickApply = (jobId: string) => {
+    openQuickApply(jobId);
+  };
+
   if (jobs.length === 0) {
     return (
       <div className="text-center py-12">
@@ -32,10 +77,22 @@ export function JobList({ jobs, emptyMessage = 'No jobs found' }: JobListProps) 
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-      {jobs.map((job) => (
-        <JobCard key={job.id} job={job} />
-      ))}
-    </div>
+    <>
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+        {jobs.map((job) => (
+          <JobCardV2
+            key={job.id}
+            job={toJobCardData(job)}
+            isSaved={savedJobs.has(job.id)}
+            onSave={handleSave}
+            onQuickApply={handleQuickApply}
+            showQuickApply
+          />
+        ))}
+      </div>
+
+      {/* Quick Apply Modal - uses internal store state */}
+      <QuickApplyModal />
+    </>
   );
 }
