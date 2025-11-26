@@ -202,7 +202,12 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="flex-1"
               />
-              <Button onClick={handleSearch}>Search</Button>
+              <Button
+                onClick={handleSearch}
+                className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+              >
+                Search
+              </Button>
             </div>
           </div>
 
@@ -238,10 +243,10 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
                 Active Filters ({activeFilters.length})
               </Label>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={handleClearFilters}
-                className="h-auto py-1 px-2"
+                className="h-auto py-1 px-3 border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800"
               >
                 Clear All
               </Button>
@@ -283,7 +288,7 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between font-semibold"
+                className="w-full justify-between font-semibold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span>Location {filters.countries && filters.countries.length > 0 && `(${filters.countries.length})`}</span>
                 {locationOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -315,7 +320,7 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between font-semibold"
+                className="w-full justify-between font-semibold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span>Subject {filters.subjects && filters.subjects.length > 0 && `(${filters.subjects.length})`}</span>
                 {subjectOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -347,7 +352,7 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between font-semibold"
+                className="w-full justify-between font-semibold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span>Job Type {filters.employmentTypes && filters.employmentTypes.length > 0 && `(${filters.employmentTypes.length})`}</span>
                 {employmentOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -379,7 +384,7 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between font-semibold"
+                className="w-full justify-between font-semibold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span>Salary Range</span>
                 {salaryOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -434,7 +439,7 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between font-semibold"
+                className="w-full justify-between font-semibold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span>Experience Level</span>
                 {experienceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -468,7 +473,7 @@ export function JobFiltersEnhanced({ onFilterChange, filterOptions, variant = 's
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between font-semibold"
+                className="w-full justify-between font-semibold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span>Benefits</span>
                 {benefitsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

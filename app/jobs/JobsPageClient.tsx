@@ -206,7 +206,7 @@ export function JobsPageClient({ filterOptions }: JobsPageClientProps) {
             <Button
               variant="outline"
               size="sm"
-              className="lg:hidden"
+              className="lg:hidden border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
             >
               Filters
@@ -296,6 +296,7 @@ export function JobsPageClient({ filterOptions }: JobsPageClientProps) {
                     setFilters({});
                     setPage(1);
                   }}
+                  className="border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800"
                 >
                   Clear filters
                 </Button>
@@ -309,16 +310,18 @@ export function JobsPageClient({ filterOptions }: JobsPageClientProps) {
                   variant="outline"
                   onClick={handlePreviousPage}
                   disabled={page === 1}
+                  className="border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   Previous
                 </Button>
-                <span className="flex items-center px-4 text-sm text-gray-500">
+                <span className="flex items-center px-4 text-sm font-medium text-gray-600 dark:text-gray-400">
                   Page {page}
                 </span>
                 <Button
                   variant="outline"
                   onClick={handleLoadMore}
                   disabled={!hasMore}
+                  className="border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   Next
                 </Button>
